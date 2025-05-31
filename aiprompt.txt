@@ -1,0 +1,157 @@
+
+## 🤖 AI Agent Prompt for Creating Similar System
+
+Use this detailed prompt with an AI coding assistant to create a similar STL collection management system:
+
+```
+Create a comprehensive Django web application for managing 3D STL file collections with the following specifications:
+
+## PROJECT REQUIREMENTS
+
+### Core Functionality
+1. **Image Upload System**: Create a Django app called 'image_upload' that should be accessible to admin users only with an Image model containing:
+   - ImageField for file uploads (stored in 'uploaded_images/' directory)
+   - CharField for name, publisher, range, and folder_location
+   - DateTimeField for upload tracking
+   - TextField for optional notes
+   - ManyToManyField relationship with a Tag model
+
+2. **Tag Management System**: Create a 'tags' app that should be accessible to admin users only with:
+   - Tag model with name field
+   - Views for creating, editing, and deleting tags
+   - Admin interface integration
+
+3. **Collection Views**: Create a 'collection' app with:
+   - Image gallery view with pagination (25 items per page)
+   - Advanced filtering by publisher, range, and tags
+   - Search functionality across names and tags
+   - Edit capabilities for individual images
+
+4. **Additional Apps**: Create placeholder apps for 'ranges' that should be accessible to admin users only, 'tag_assign' that should be accessible to admin users only, and 'image_details'
+
+### Frontend Requirements
+1. **Bootstrap 5 Integration**: 
+   - Install django-bootstrap5 package
+   - Create a base.html template with navigation, container structure, and footer
+   - Include Bootstrap CSS/JS and Bootstrap Icons
+   - Implement responsive design principles
+
+2. **Modern UI Components**:
+   - Card-based layout for image display
+   - Form styling with Bootstrap classes
+   - Select2 integration for multi-select tag fields
+   - Loading states and visual feedback
+   - Mobile-responsive navigation
+   
+
+3. **Template Structure**:
+   - Base template with navigation bar including links to Collection, Upload, Assign Tags, Edit Tags, and Ranges
+   - Landing page showing latest 4 uploaded images
+   - Image collection page with search, filters, and pagination
+   - Image edit page with form validation and Select2 tags
+
+### Technical Implementation
+1. **Django Setup**:
+   - Use Django 5.2+ with SQLite database
+   - Configure media files handling for image uploads
+   - Set up proper URL routing for all apps
+   - Implement Django ORM relationships
+   - Admin pages should use django-unfold
+
+2. **Form Handling**:
+   - Create Django forms for image upload and editing
+   - Implement proper validation and error handling
+   - Use ModelMultipleChoiceField for tag selection
+   - Add CSRF protection
+
+3. **Database Design**:
+   - Image model with proper field types and constraints
+   - Tag model with string representation
+   - Many-to-Many relationship between Images and Tags
+   - Proper model methods and admin configuration
+
+### Advanced Features
+1. **Search and Filtering**:
+   - Implement Django Q objects for complex queries
+   - Real-time filtering with GET parameters
+   - Search across multiple fields with distinct() for M2M relationships
+   - Dropdown filters populated from database
+
+2. **File Management**:
+   - Proper media file handling with MEDIA_URL and MEDIA_ROOT
+   - Image field validation and secure upload handling
+   - Organized file storage structure
+
+3. **User Experience**:
+   - Form validation with Bootstrap styling
+   - Select2 with Bootstrap theme for enhanced multi-select
+   - Responsive design with mobile-first approach
+   - Intuitive navigation and breadcrumbs
+
+### JavaScript Integration
+1. **Select2 Configuration**:
+   - Initialize Select2 with Bootstrap 5 theme
+   - Configure placeholder text and search functionality
+   - Implement multi-select with tag management
+
+2. **Form Enhancement**:
+   - Client-side validation with visual feedback
+   - Dynamic form interactions
+   - Toast notifications for user feedback
+
+### Optional PowerShell Integration
+Create a PowerShell script for bulk operations:
+- Function to process image files from directory structures
+- SQLite database integration for bulk inserts
+- Automated metadata extraction from file paths
+- Error handling and logging capabilities
+
+### File Structure to Create
+```
+project_name/
+├── manage.py
+├── project_name/
+│   ├── settings.py (configure apps, database, media)
+│   ├── urls.py (main URL configuration)
+│   └── views.py (landing page view)
+├── image_upload/ (models, forms, views, urls)
+├── collection/ (collection views, edit functionality)
+├── tags/ (tag management)
+├── ranges/ (range management)
+├── tag_assign/ (tag assignment)
+├── image_details/ (detailed views)
+├── templates/
+│   ├── base.html
+│   ├── landing_page.html
+│   └── [app_templates]/
+├── static/ (CSS, JS, images)
+└── media/uploaded_images/
+```
+
+### Styling Requirements
+- Use Bootstrap 5 card components for image display
+- Implement proper form styling with validation states
+- Create responsive grid layouts
+- Add hover effects and transitions
+- Use Bootstrap Icons throughout the interface
+- Implement dark/light theme support
+- Ensure accessibility compliance
+- Admin pages should use django-unfold
+
+### Database Configuration
+- Configure SQLite for development
+- Set up proper model relationships
+- Create migrations for all models
+- Configure admin interface with proper list displays and filters
+
+IMPLEMENTATION NOTES:
+- Start with basic Django project setup and models
+- Implement Bootstrap integration early
+- Build templates with responsive design from the start
+- Test file upload functionality thoroughly
+- Ensure proper error handling throughout
+- Focus on user experience and modern design principles
+- Make the interface intuitive and efficient for managing large collections
+
+The result should be a professional, modern web application suitable for managing 3D STL file collections with excellent user experience and robust functionality.
+```
