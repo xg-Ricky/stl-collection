@@ -46,8 +46,7 @@
                                 {% endif %}
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="mb-3">
+                        <div class="col-md-6">                            <div class="mb-3">
                                 <label for="{{ form.range.id_for_label }}" class="form-label">Range</label>
                                 {{ form.range }}
                                 {% if form.range.errors %}
@@ -58,6 +57,17 @@
                             </div>
                         </div>
                     </div>
+
+                    {% if last_image and last_image.publisher or last_image.range %}
+                    <div class="row">
+                        <div class="col-12 mb-3">
+                            <button type="button" class="btn btn-outline-secondary btn-sm" id="fillLastValuesBtn">
+                                <i class="bi bi-arrow-repeat"></i> Use Last Upload Values
+                                {% if last_image.publisher %}({{ last_image.publisher }}{% if last_image.range %} - {{ last_image.range }}{% endif %}){% endif %}
+                            </button>
+                        </div>
+                    </div>
+                    {% endif %}
 
                     <div class="mb-3">
                         <label for="{{ form.folder_location.id_for_label }}" class="form-label">Folder Location</label>
@@ -109,7 +119,11 @@
 document.addEventListener('DOMContentLoaded', function() {
     const fileInput = document.getElementById('{{ form.image.id_for_label }}');
     const nameInput = document.getElementById('{{ form.name.id_for_label }}');
+    const publisherInput = document.getElementById('{{ form.publisher.id_for_label }}');
+    const rangeInput = document.getElementById('{{ form.range.id_for_label }}');
+    const fillLastValuesBtn = document.getElementById('fillLastValuesBtn');
     
+    // Auto-populate name field when file is selected
     fileInput.addEventListener('change', function() {
         if (this.files && this.files[0]) {
             const fileName = this.files[0].name;
@@ -121,6 +135,33 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
+    
+    // Populate publisher and range fields with last upload values
+    if (fillLastValuesBtn) {
+        fillLastValuesBtn.addEventListener('click', function() {
+            {% if last_image %}
+                {% if last_image.publisher %}
+                    publisherInput.value = '{{ last_image.publisher|escapejs }}';
+                {% endif %}
+                {% if last_image.range %}
+                    rangeInput.value = '{{ last_image.range|escapejs }}';
+                {% endif %}
+                
+                // Show feedback to user
+                const originalText = this.innerHTML;
+                this.innerHTML = '<i class="bi bi-check"></i> Values Applied!';
+                this.classList.remove('btn-outline-secondary');
+                this.classList.add('btn-success');
+                
+                // Reset button after 2 seconds
+                setTimeout(() => {
+                    this.innerHTML = originalText;
+                    this.classList.remove('btn-success');
+                    this.classList.add('btn-outline-secondary');
+                }, 2000);
+            {% endif %}
+        });
+    }
     
     function cleanFileName(fileName) {
         // Remove file extension

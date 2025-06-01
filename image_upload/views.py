@@ -16,6 +16,10 @@ def upload_image(request):
     else:
         form = ImageUploadForm()
     
+    # Get the last uploaded image for auto-fill functionality
+    last_image = Image.objects.order_by('-upload_date').first()
+    
     return render(request, 'image_upload/upload.html', {
-        'form': form
+        'form': form,
+        'last_image': last_image
     })
