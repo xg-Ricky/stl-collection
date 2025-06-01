@@ -98,11 +98,40 @@
                         </a>
                         <button type="submit" class="btn btn-primary">
                             <i class="bi bi-upload"></i> Upload Image
-                        </button>
-                    </div>
+                        </button>                    </div>
                 </form>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('{{ form.image.id_for_label }}');
+    const nameInput = document.getElementById('{{ form.name.id_for_label }}');
+    
+    fileInput.addEventListener('change', function() {
+        if (this.files && this.files[0]) {
+            const fileName = this.files[0].name;
+            const cleanedName = cleanFileName(fileName);
+            
+            // Only auto-populate if the name field is empty
+            if (!nameInput.value.trim()) {
+                nameInput.value = cleanedName;
+            }
+        }
+    });
+    
+    function cleanFileName(fileName) {
+        // Remove file extension
+        const nameWithoutExt = fileName.replace(/\.[^/.]+$/, '');
+        
+        // Remove underscore and number pattern at the end (e.g., "_001", "_123")
+        const cleanedName = nameWithoutExt.replace(/_\d+$/, '');
+        
+        // Replace remaining underscores with spaces for better readability
+        return cleanedName.replace(/_/g, ' ');
+    }
+});
+</script>
 {% endblock %}
