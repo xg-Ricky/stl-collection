@@ -22,11 +22,14 @@
                             </div>
                         {% endif %}
                         <div class="form-text">Select an image file to upload.</div>
-                    </div>
-
-                    <div class="mb-3">
+                    </div>                    <div class="mb-3">
                         <label for="{{ form.name.id_for_label }}" class="form-label">Name *</label>
-                        {{ form.name }}
+                        <div class="input-group">
+                            {{ form.name }}
+                            <button type="button" class="btn btn-outline-secondary" id="removeFirstWordBtn" title="Remove first word">
+                                <i class="bi bi-scissors"></i>
+                            </button>
+                        </div>
                         {% if form.name.errors %}
                             <div class="invalid-feedback d-block">
                                 {{ form.name.errors.0 }}
@@ -122,6 +125,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const publisherInput = document.getElementById('{{ form.publisher.id_for_label }}');
     const rangeInput = document.getElementById('{{ form.range.id_for_label }}');
     const fillLastValuesBtn = document.getElementById('fillLastValuesBtn');
+    const removeFirstWordBtn = document.getElementById('removeFirstWordBtn');
     
     // Auto-populate name field when file is selected
     fileInput.addEventListener('change', function() {
@@ -132,6 +136,45 @@ document.addEventListener('DOMContentLoaded', function() {
             // Only auto-populate if the name field is empty
             if (!nameInput.value.trim()) {
                 nameInput.value = cleanedName;
+            }
+        }
+    });
+    
+    // Remove first word from name field
+    removeFirstWordBtn.addEventListener('click', function() {
+        const currentValue = nameInput.value.trim();
+        if (currentValue) {
+            // Split by spaces and remove first word
+            const words = currentValue.split(' ');
+            if (words.length > 1) {
+                const newValue = words.slice(1).join(' ');
+                nameInput.value = newValue;
+                
+                // Show feedback
+                const originalIcon = this.innerHTML;
+                this.innerHTML = '<i class="bi bi-check"></i>';
+                this.classList.remove('btn-outline-secondary');
+                this.classList.add('btn-success');
+                
+                // Reset button after 1 second
+                setTimeout(() => {
+                    this.innerHTML = originalIcon;
+                    this.classList.remove('btn-success');
+                    this.classList.add('btn-outline-secondary');
+                }, 1000);
+            } else {
+                // Show warning if only one word
+                const originalIcon = this.innerHTML;
+                this.innerHTML = '<i class="bi bi-exclamation-triangle"></i>';
+                this.classList.remove('btn-outline-secondary');
+                this.classList.add('btn-warning');
+                
+                // Reset button after 1 second
+                setTimeout(() => {
+                    this.innerHTML = originalIcon;
+                    this.classList.remove('btn-warning');
+                    this.classList.add('btn-outline-secondary');
+                }, 1000);
             }
         }
     });
