@@ -42,7 +42,7 @@ def gallery(request):
     all_tags = Tag.objects.all()
     
     # Pagination
-    paginator = Paginator(images, 25)
+    paginator = Paginator(images, 12)
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
