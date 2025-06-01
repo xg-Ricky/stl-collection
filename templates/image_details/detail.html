@@ -4,10 +4,17 @@
 
 {% block content %}
 <div class="row">
-    <div class="col-md-8">
-        <div class="card">
+    <div class="col-md-8">        <div class="card">
             {% if image.image %}
-            <img src="{{ image.image.url }}" class="card-img-top" alt="{{ image.name }}" style="max-height: 500px; object-fit: contain;">
+            <div class="text-center bg-light p-3">
+                <img src="{{ image.image.url }}" 
+                     class="img-fluid" 
+                     alt="{{ image.name }}" 
+                     style="max-height: 70vh; max-width: 100%; object-fit: contain; border-radius: 0.375rem; cursor: pointer;" 
+                     data-bs-toggle="modal" 
+                     data-bs-target="#imageModal"
+                     title="Click to view full size">
+            </div>
             {% else %}
             <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 400px;">
                 <i class="bi bi-file-earmark text-muted" style="font-size: 5rem;"></i>
@@ -119,6 +126,28 @@
                 </div>
             </div>
             {% endfor %}
+        </div>    </div>
+</div>
+{% endif %}
+
+<!-- Full Screen Image Modal -->
+{% if image.image %}
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content bg-dark">
+            <div class="modal-header border-0">
+                <h5 class="modal-title text-white" id="imageModalLabel">{{ image.name }}</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body d-flex align-items-center justify-content-center p-0">
+                <img src="{{ image.image.url }}" class="img-fluid" alt="{{ image.name }}" style="max-height: 100vh; max-width: 100%; object-fit: contain;">
+            </div>
+            <div class="modal-footer border-0 justify-content-center">
+                <a href="{{ image.image.url }}" target="_blank" class="btn btn-outline-light">
+                    <i class="bi bi-download"></i> Download Original
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
         </div>
     </div>
 </div>
