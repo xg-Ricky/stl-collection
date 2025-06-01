@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Tag: {{ tag.name }} - STL Collection{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h3><i class="bi bi-trash"></i> Delete Tag: {{ tag.name }}</h3>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    <strong>Warning!</strong> This action cannot be undone.
+                </div>
+                
+                <p>Are you sure you want to delete the tag "<strong>{{ tag.name }}</strong>"?</p>
+                
+                {% if tag.image_set.count > 0 %}
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i>
+                    This tag is currently used by <strong>{{ tag.image_set.count }} image(s)</strong>. 
+                    Deleting this tag will remove it from all images.
+                </div>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'tags:list' %}" class="btn btn-secondary me-md-2">
+                            <i class="bi bi-arrow-left"></i> Cancel
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Delete Tag
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
