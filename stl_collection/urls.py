@@ -29,6 +29,7 @@ urlpatterns = [
     path('ranges/', include('ranges.urls')),
     path('assign/', include('tag_assign.urls')),
     path('details/', include('image_details.urls')),
+    path('accounts/', include('django.contrib.auth.urls')),  # Built-in auth views
 ]
 
 # Serve media files during development
