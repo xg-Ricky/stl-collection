@@ -67,18 +67,17 @@
 </div>
 
 <!-- Image Grid -->
-<div class="row">
-    {% for image in page_obj %}
+<div class="row">    {% for image in page_obj %}
     <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
         <div class="card h-100">
-            {% if image.image %}
-            <img src="{{ image.image.url }}" class="card-img-top" alt="{{ image.name }}">
-            {% else %}
-            <div class="card-img-top bg-light d-flex align-items-center justify-content-center">
+            {% if image.image %}            <div class="card-img-container position-relative overflow-hidden">
+                <img src="{{ image.image.url }}" class="card-img-top" alt="{{ image.name }}">
+            </div>            {% else %}
+            <div class="card-img-container bg-light d-flex align-items-center justify-content-center">
                 <i class="bi bi-file-earmark text-muted" style="font-size: 3rem;"></i>
             </div>
             {% endif %}
-            <div class="card-body">
+            <div class="card-body d-flex flex-column p-3">
                 <h5 class="card-title">{{ image.name }}</h5>
                 {% if image.publisher %}
                 <p class="card-text"><small class="text-muted">by {{ image.publisher }}</small></p>
@@ -93,7 +92,9 @@
                     {% endfor %}
                 </div>
                 {% endif %}
-                <p class="card-text"><small class="text-muted">{{ image.upload_date|date:"M d, Y" }}</small></p>
+                <div class="mt-auto">
+                    <p class="card-text"><small class="text-muted">{{ image.upload_date|date:"M d, Y" }}</small></p>
+                </div>
             </div>
             <div class="card-footer">
                 <div class="btn-group w-100" role="group">
