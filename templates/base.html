@@ -47,10 +47,28 @@
         }
         [data-bs-theme="dark"] .filter-form {
             background-color: var(--bs-dark);
-        }
-        .tag-badge {
+        }        .tag-badge {
             font-size: 0.75rem;
             margin: 0.1rem;
+        }        /* Disable card hover animations and shadows globally */
+        .card {
+            transition: none !important;
+            transform: none !important;
+        }
+        .card:hover {
+            transform: none !important;
+            box-shadow: none !important;
+            transition: none !important;
+        }
+        .card:hover .card-img-container img {
+            transform: none !important;
+        }
+        .image-card {
+            transition: none !important;
+        }
+        .image-card:hover {
+            transform: none !important;
+            box-shadow: none !important;
         }
     </style>
     

@@ -2,6 +2,23 @@
 
 {% block title %}Collection Gallery - STL Collection{% endblock %}
 
+{% block extra_css %}
+<style>
+/* Re-enable hover animations specifically for collection gallery */
+.card {
+    transition: transform 0.2s ease-in-out !important;
+}
+.card:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15) !important;
+    transition: transform 0.2s ease-in-out !important;
+}
+.card:hover .card-img-container img {
+    transform: scale(1.05) !important;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-12">
