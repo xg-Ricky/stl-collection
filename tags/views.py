@@ -8,8 +8,27 @@ from .forms import TagForm, TagTypeForm
 def tag_list(request):
     """List all tags - staff only"""
     tags = Tag.objects.all()
+    
+    # Get all tag types for the filter dropdown
+    tag_types = TagType.objects.filter(is_active=True)
+    
+    # Apply tag type filter if provided
+    tag_type_filter = request.GET.get('tag_type')
+    if tag_type_filter:
+        if tag_type_filter == 'none':
+            # Filter for tags with no tag type
+            tags = tags.filter(tag_type__isnull=True)
+        else:
+            try:
+                tag_type_id = int(tag_type_filter)
+                tags = tags.filter(tag_type_id=tag_type_id)
+            except (ValueError, TypeError):
+                pass  # Invalid filter value, ignore
+    
     return render(request, 'tags/list.html', {
         'tags': tags,
+        'tag_types': tag_types,
+        'selected_tag_type': tag_type_filter,
         'active_tab': 'tags'
     })
 
