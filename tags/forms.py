@@ -1,5 +1,6 @@
 from django import forms
 from .models import Tag, TagType
+from .widgets import ColorPickerWidget
 
 class TagForm(forms.ModelForm):
     class Meta:
@@ -29,11 +30,7 @@ class TagTypeForm(forms.ModelForm):
                 'rows': 3,
                 'placeholder': 'Optional description of this tag type...'
             }),
-            'color': forms.TextInput(attrs={
-                'class': 'form-control color-picker',
-                'type': 'color',
-                'style': 'height: 50px;'
-            }),
+            'color': ColorPickerWidget(),
             'sort_order': forms.NumberInput(attrs={
                 'class': 'form-control',
                 'min': '0',
