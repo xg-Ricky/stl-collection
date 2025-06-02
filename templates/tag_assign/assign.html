@@ -199,16 +199,14 @@
                 </select>
             </div>
         </div>
-        <div class="mt-2" id="quickTagsContainer">            {% for tag in quick_tags|slice:":15" %}
+        <div class="mt-2" id="quickTagsContainer">            
+            {% for tag in quick_tags|slice:":15" %}
             <span class="badge quick-tag" 
-                  style="background-color: {{ tag.get_color }}; color: {{ tag.get_text_color }};"
-                  data-tag-id="{{ tag.id }}" 
-                  data-tag-name="{{ tag.name }}" 
-                  data-tag-type="{{ tag.tag_type.id }}">
+                style="background-color: {{ tag.get_color }}; color: {{ tag.get_text_color }};"
+                data-tag-id="{{ tag.id }}" 
+                data-tag-name="{{ tag.name }}" 
+                data-tag-type="{{ tag.tag_type.id }}">
                 {{ tag.name }}
-                {% if tag.tag_type %}
-                <small class="text-muted">({{ tag.tag_type.name }})</small>
-                {% endif %}
             </span>
             {% endfor %}
         </div>
