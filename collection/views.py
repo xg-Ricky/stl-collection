@@ -3,9 +3,11 @@ from django.contrib import messages
 from django.contrib.admin.views.decorators import staff_member_required
 from django.core.paginator import Paginator
 from django.db.models import Q
+from django.http import JsonResponse
 from image_upload.models import Image
 from image_upload.forms import ImageEditForm
 from tags.models import Tag
+import os
 
 def gallery(request):
     """Gallery view with search and filtering"""
@@ -78,5 +80,33 @@ def edit_image(request, image_id):
     
     return render(request, 'collection/edit.html', {
         'form': form,
+        'image': image
+    })
+
+@staff_member_required
+def delete_image(request, image_id):
+    """Delete an existing image - staff only"""
+    image = get_object_or_404(Image, id=image_id)
+    
+    if request.method == 'POST':
+        image_name = image.name
+        
+        # Delete the physical file if it exists
+        if image.image:
+            try:
+                if os.path.isfile(image.image.path):
+                    os.remove(image.image.path)
+            except (ValueError, OSError) as e:
+                # File doesn't exist or can't be deleted - log but continue
+                messages.warning(request, f'Image file could not be deleted from disk, but database record was removed.')
+        
+        # Delete the database record
+        image.delete()
+        
+        messages.success(request, f'Successfully deleted "{image_name}"!')
+        return redirect('collection:gallery')
+    
+    # For GET requests, show confirmation page
+    return render(request, 'collection/delete_confirm.html', {
         'image': image
     })

@@ -1,0 +1,78 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete {{ image.name }} - STL Collection{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8 offset-md-2">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h3><i class="bi bi-exclamation-triangle"></i> Delete Image: {{ image.name }}</h3>
+            </div>
+            <div class="card-body">
+                {% if image.image %}
+                <div class="text-center mb-4">
+                    <img src="{{ image.image.url }}" class="img-fluid" style="max-height: 300px;" alt="{{ image.name }}">
+                </div>
+                {% endif %}
+
+                <div class="alert alert-danger" role="alert">
+                    <h5 class="alert-heading"><i class="bi bi-exclamation-triangle"></i> Warning!</h5>
+                    <p>You are about to permanently delete the image <strong>"{{ image.name }}"</strong>.</p>
+                    <hr>
+                    <p class="mb-0">
+                        <strong>This action cannot be undone.</strong> The image file will be removed from the server 
+                        and all associated data will be lost.
+                    </p>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Name:</strong> {{ image.name }}
+                    </div>
+                    {% if image.publisher %}
+                    <div class="col-md-6">
+                        <strong>Publisher:</strong> {{ image.publisher }}
+                    </div>
+                    {% endif %}
+                </div>
+
+                {% if image.range %}
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <strong>Range:</strong> {{ image.range }}
+                    </div>
+                    <div class="col-md-6">
+                        <strong>Upload Date:</strong> {{ image.upload_date|date:"F d, Y g:i A" }}
+                    </div>
+                </div>
+                {% endif %}
+
+                {% if image.tags.exists %}
+                <div class="mb-3">
+                    <strong>Tags:</strong>
+                    {% for tag in image.tags.all %}
+                    <span class="badge me-1" style="background-color: {{ tag.get_color }}; color: {{ tag.get_text_color }};">{{ tag.name }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'collection:edit' image.id %}" class="btn btn-secondary me-md-2">
+                            <i class="bi bi-arrow-left"></i> Cancel
+                        </a>
+                        <a href="{% url 'collection:gallery' %}" class="btn btn-outline-secondary me-md-2">
+                            <i class="bi bi-grid"></i> Back to Gallery
+                        </a>
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Confirm Delete
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
