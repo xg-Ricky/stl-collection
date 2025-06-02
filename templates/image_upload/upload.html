@@ -14,6 +14,52 @@
     transform: none !important;
     border-color: var(--bs-border-color) !important;
 }
+
+/* Drag and drop zone styles */
+.drop-zone {
+    min-height: 200px;
+    transition: all 0.3s ease;
+    background-color: #f8f9fa;
+    cursor: pointer;
+}
+
+.drop-zone:hover {
+    background-color: #e9ecef;
+    border-color: #007bff !important;
+}
+
+.drop-zone.dragover {
+    background-color: #cfe2ff;
+    border-color: #007bff !important;
+    transform: scale(1.02);
+}
+
+.drop-zone-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 2rem;
+}
+
+.drop-zone input[type="file"] {
+    display: none;
+}
+
+.file-preview {
+    max-width: 100%;
+    max-height: 150px;
+    border-radius: 0.375rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.preview-container {
+    background-color: white;
+    border-radius: 0.375rem;
+    padding: 1rem;
+    border: 1px solid #dee2e6;
+}
 </style>
 {% endblock %}
 
@@ -27,17 +73,38 @@
             <div class="card-body">
                 <form method="post" enctype="multipart/form-data">
                     {% csrf_token %}
-                    
-                    <div class="mb-3">
+                      <div class="mb-3">
                         <label for="{{ form.image.id_for_label }}" class="form-label">Image File *</label>
-                        {{ form.image }}
+                        <div class="drop-zone border border-2 border-dashed rounded" id="dropZone">
+                            <div class="drop-zone-content" id="dropZoneContent">
+                                <i class="bi bi-cloud-upload fs-1 text-primary mb-3"></i>
+                                <h5 class="mb-2">Drag & Drop Your Image Here</h5>
+                                <p class="text-muted mb-3">or click to browse files</p>
+                                <button type="button" class="btn btn-outline-primary" id="browseBtn">
+                                    <i class="bi bi-folder2-open"></i> Browse Files
+                                </button>
+                                {{ form.image }}
+                            </div>
+                            <div class="preview-container" id="previewContainer" style="display: none;">
+                                <div class="d-flex align-items-center">
+                                    <img id="previewImage" src="" alt="Preview" class="file-preview me-3">
+                                    <div class="flex-grow-1">
+                                        <h6 id="fileName" class="mb-1"></h6>
+                                        <small class="text-muted" id="fileSize"></small>
+                                    </div>
+                                    <button type="button" class="btn btn-outline-danger btn-sm" id="removeFileBtn">
+                                        <i class="bi bi-x"></i> Remove
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
                         {% if form.image.errors %}
                             <div class="invalid-feedback d-block">
                                 {{ form.image.errors.0 }}
                             </div>
                         {% endif %}
-                        <div class="form-text">Select an image file to upload.</div>
-                    </div>                    <div class="mb-3">
+                        <div class="form-text">Drag and drop an image file or click to browse. Supported formats: JPG, PNG, GIF, WebP</div>
+                    </div><div class="mb-3">
                         <label for="{{ form.name.id_for_label }}" class="form-label">Name *</label>
                         <div class="input-group">
                             {{ form.name }}
@@ -142,16 +209,126 @@ document.addEventListener('DOMContentLoaded', function() {
     const fillLastValuesBtn = document.getElementById('fillLastValuesBtn');
     const removeFirstWordBtn = document.getElementById('removeFirstWordBtn');
     
-    // Auto-populate name field when file is selected
+    // Drag and drop elements
+    const dropZone = document.getElementById('dropZone');
+    const dropZoneContent = document.getElementById('dropZoneContent');
+    const previewContainer = document.getElementById('previewContainer');
+    const previewImage = document.getElementById('previewImage');
+    const fileName = document.getElementById('fileName');
+    const fileSize = document.getElementById('fileSize');
+    const browseBtn = document.getElementById('browseBtn');
+    const removeFileBtn = document.getElementById('removeFileBtn');
+    
+    // Drag and drop functionality
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+        document.body.addEventListener(eventName, preventDefaults, false);
+    });
+    
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, highlight, false);
+    });
+    
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, unhighlight, false);
+    });
+    
+    dropZone.addEventListener('drop', handleDrop, false);
+    dropZone.addEventListener('click', () => fileInput.click());
+    browseBtn.addEventListener('click', () => fileInput.click());
+    removeFileBtn.addEventListener('click', clearFile);
+    
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+    
+    function highlight(e) {
+        dropZone.classList.add('dragover');
+    }
+    
+    function unhighlight(e) {
+        dropZone.classList.remove('dragover');
+    }
+    
+    function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        
+        if (files.length > 0) {
+            const file = files[0];
+            if (isValidImageFile(file)) {
+                fileInput.files = files;
+                handleFileSelect(file);
+                
+                // Trigger duplicate check
+                if (typeof checkDuplicateFilename === 'function') {
+                    checkDuplicateFilename();
+                }
+            } else {
+                alert('Please select a valid image file (JPG, PNG, GIF, WebP).');
+            }
+        }
+    }
+    
+    function isValidImageFile(file) {
+        const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        return validTypes.includes(file.type);
+    }
+    
+    function handleFileSelect(file) {
+        showPreview(file);
+        
+        // Auto-populate name field if empty
+        if (!nameInput.value.trim()) {
+            const cleanedName = cleanFileName(file.name);
+            nameInput.value = cleanedName;
+        }
+    }
+    
+    function showPreview(file) {
+        dropZoneContent.style.display = 'none';
+        previewContainer.style.display = 'block';
+        
+        fileName.textContent = file.name;
+        fileSize.textContent = formatFileSize(file.size);
+        
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                previewImage.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        }
+    }
+    
+    function clearFile() {
+        fileInput.value = '';
+        dropZoneContent.style.display = 'flex';
+        previewContainer.style.display = 'none';
+        previewImage.src = '';
+        
+        // Hide any duplicate warnings
+        if (typeof hideFilenameWarning === 'function') {
+            hideFilenameWarning();
+        }
+    }
+    
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+    
+    // Auto-populate name field when file is selected via traditional input
     fileInput.addEventListener('change', function() {
         if (this.files && this.files[0]) {
-            const fileName = this.files[0].name;
-            const cleanedName = cleanFileName(fileName);
-            
-            // Only auto-populate if the name field is empty
-            if (!nameInput.value.trim()) {
-                nameInput.value = cleanedName;
-            }
+            const file = this.files[0];
+            handleFileSelect(file);
+        } else {
+            clearFile();
         }
     });
     
