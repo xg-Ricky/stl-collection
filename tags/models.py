@@ -26,3 +26,24 @@ class Tag(models.Model):
     
     def __str__(self):
         return self.name
+    
+    def get_color(self):
+        """Return the tag type color, or default gray if no tag type"""
+        return self.tag_type.color if self.tag_type else '#6c757d'
+    
+    def get_text_color(self):
+        """Return appropriate text color (white or black) based on background color"""
+        if not self.tag_type:
+            return 'white'
+        
+        # Convert hex to RGB
+        hex_color = self.tag_type.color.lstrip('#')
+        r = int(hex_color[0:2], 16)
+        g = int(hex_color[2:4], 16)
+        b = int(hex_color[4:6], 16)
+        
+        # Calculate brightness
+        brightness = (r * 299 + g * 587 + b * 114) / 1000
+        
+        # Return black for light colors, white for dark colors
+        return 'black' if brightness > 128 else 'white'

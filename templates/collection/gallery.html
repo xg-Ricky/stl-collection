@@ -85,11 +85,10 @@
                 {% endif %}
                 {% if image.range %}
                 <p class="card-text"><small class="text-muted">Range: {{ image.range }}</small></p>
-                {% endif %}
-                {% if image.tags.exists %}
+                {% endif %}                {% if image.tags.exists %}
                 <div class="mb-2">
                     {% for tag in image.tags.all %}
-                    <span class="badge bg-secondary tag-badge">{{ tag.name }}</span>
+                    <span class="badge tag-badge" style="background-color: {{ tag.get_color }}; color: {{ tag.get_text_color }};">{{ tag.name }}</span>
                     {% endfor %}
                 </div>
                 {% endif %}

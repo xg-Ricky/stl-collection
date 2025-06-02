@@ -199,10 +199,9 @@
                 </select>
             </div>
         </div>
-        <div class="mt-2" id="quickTagsContainer">
-            {% for tag in quick_tags|slice:":15" %}
+        <div class="mt-2" id="quickTagsContainer">            {% for tag in quick_tags|slice:":15" %}
             <span class="badge quick-tag" 
-                  style="background-color: {{ tag.tag_type.color|default:'#6c757d' }};"
+                  style="background-color: {{ tag.get_color }}; color: {{ tag.get_text_color }};"
                   data-tag-id="{{ tag.id }}" 
                   data-tag-name="{{ tag.name }}" 
                   data-tag-type="{{ tag.tag_type.id }}">
@@ -241,9 +240,9 @@
             </div>
             <div class="card-body p-2">
                 <h6 class="card-title mb-1" style="font-size: 0.8rem;">{{ image.name|truncatechars:20 }}</h6>
-                <div class="mb-2">
-                    {% for tag in image.tags.all %}
-                    <span class="badge bg-primary tag-badge quick-tag assigned" 
+                <div class="mb-2">                    {% for tag in image.tags.all %}
+                    <span class="badge tag-badge quick-tag assigned" 
+                          style="background-color: {{ tag.get_color }}; color: {{ tag.get_text_color }};"
                           data-tag-id="{{ tag.id }}" 
                           data-tag-name="{{ tag.name }}"
                           data-image-id="{{ image.id }}">

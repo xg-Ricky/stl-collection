@@ -127,11 +127,10 @@
                 <h6 class="card-title">{{ image.name }}</h6>
                 {% if image.publisher %}
                 <p class="card-text"><small class="text-muted">by {{ image.publisher }}</small></p>
-                {% endif %}
-                {% if image.tags.exists %}
+                {% endif %}                {% if image.tags.exists %}
                 <div class="mb-2">
                     {% for tag in image.tags.all %}
-                    <span class="badge bg-secondary me-1">{{ tag.name }}</span>
+                    <span class="badge me-1" style="background-color: {{ tag.get_color }}; color: {{ tag.get_text_color }};">{{ tag.name }}</span>
                     {% endfor %}
                 </div>
                 {% endif %}
