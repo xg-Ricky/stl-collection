@@ -20,8 +20,7 @@ def gallery(request):
             Q(range__icontains=search_query) |
             Q(tags__name__icontains=search_query)
         ).distinct()
-    
-    # Filter by publisher
+      # Filter by publisher
     publisher_filter = request.GET.get('publisher', '')
     if publisher_filter:
         images = images.filter(publisher__icontains=publisher_filter)
@@ -30,16 +29,21 @@ def gallery(request):
     range_filter = request.GET.get('range', '')
     if range_filter:
         images = images.filter(range__icontains=range_filter)
-      # Filter by tags (AND logic - image must have ALL selected tags)
+    
+    # Filter by tags (AND logic - image must have ALL selected tags)
     tag_filter = request.GET.getlist('tags')
     if tag_filter:
         for tag in tag_filter:
             images = images.filter(tags=tag)
         images = images.distinct()
+      # Get filter options for dropdowns
+    publishers = Image.objects.exclude(
+        Q(publisher__isnull=True) | Q(publisher__exact='')
+    ).values_list('publisher', flat=True).distinct().order_by('publisher')
     
-    # Get filter options for dropdowns
-    publishers = Image.objects.exclude(publisher__isnull=True).exclude(publisher__exact='').values_list('publisher', flat=True).distinct()
-    ranges = Image.objects.exclude(range__isnull=True).exclude(range__exact='').values_list('range', flat=True).distinct()
+    ranges = Image.objects.exclude(
+        Q(range__isnull=True) | Q(range__exact='')
+    ).values_list('range', flat=True).distinct().order_by('range')
     all_tags = Tag.objects.all()
     
     # Pagination
