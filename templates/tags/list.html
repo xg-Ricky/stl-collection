@@ -2,6 +2,22 @@
 
 {% block title %}Manage Tags - STL Collection{% endblock %}
 
+{% block extra_css %}
+<style>
+.tag-type-badge {
+    border-radius: 12px;
+    padding: 4px 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    min-width: 80px;
+    text-align: center;
+    display: inline-block;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-12">
@@ -19,8 +35,9 @@
     <div class="col-12">
         <div class="card">
             <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-hover">                        <thead>
+                <div class="table">
+                    <table class="table">                        
+                        <thead>
                             <tr>
                                 <th>Name</th>
                                 <th>Type</th>
@@ -33,9 +50,14 @@
                             {% for tag in tags %}                            <tr>
                                 <td>
                                     <span>{{ tag.name }}</span>
-                                </td>
-                                <td>
-                                    <span>{{ tag.tag_type.name }}</span>
+                                </td>                                <td>
+                                    {% if tag.tag_type %}
+                                        <span class="badge" style="background-color: {{ tag.tag_type.color }}; color: white; font-weight: 500;">
+                                            {{ tag.tag_type.name }}
+                                        </span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">No Type</span>
+                                    {% endif %}
                                 </td>
                                 <td>{{ tag.created_at|date:"M d, Y" }}</td>
                                 <td>
