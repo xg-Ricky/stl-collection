@@ -25,14 +25,32 @@ def tagtype_list(request):
 @staff_member_required
 def create_tag(request):
     """Create a new tag - staff only"""
+    # Get the tag type from URL parameter if creating another with same type
+    tag_type_id = request.GET.get('tag_type_id')
+    
     if request.method == 'POST':
         form = TagForm(request.POST)
         if form.is_valid():
             tag = form.save()
             messages.success(request, f'Successfully created tag "{tag.name}"!')
-            return redirect('tags:list')
+            
+            # Check which button was clicked
+            if 'create_another' in request.POST:
+                # Redirect back to create page with the same tag type
+                return redirect(f'{request.path}?tag_type_id={tag.tag_type.id}')
+            else:
+                return redirect('tags:list')
     else:
-        form = TagForm()
+        # Initialize form with tag type if provided
+        initial_data = {}
+        if tag_type_id:
+            try:
+                tag_type = TagType.objects.get(id=tag_type_id)
+                initial_data['tag_type'] = tag_type
+            except TagType.DoesNotExist:
+                pass
+        
+        form = TagForm(initial=initial_data)
     
     return render(request, 'tags/create.html', {
         'form': form
