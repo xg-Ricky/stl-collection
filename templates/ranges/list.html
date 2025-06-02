@@ -3,13 +3,213 @@
 {% block title %}Ranges - STL Collection{% endblock %}
 
 {% block content %}
+<style>
+.range-card {
+    transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+}
+.range-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.stat-card {
+    transition: transform 0.2s ease-in-out;
+}
+.stat-card:hover {
+    transform: translateY(-1px);
+}
+.publisher-item {
+    background: rgba(108, 117, 125, 0.1);
+    border-radius: 4px;
+    padding: 0.25rem 0.5rem;
+    margin-bottom: 0.25rem;
+}
+</style>
+
 <div class="row">
     <div class="col-12">
         <h1><i class="bi bi-collection"></i> Ranges</h1>
-        <div class="alert alert-info">
-            <h4><i class="bi bi-info-circle"></i> {{ message }}</h4>
-            <p>This feature will allow you to manage product ranges and collections.</p>
+        <p class="text-muted">Browse and explore all available product ranges and collections.</p>
+    </div>
+</div>
+
+<!-- Search and Filter Form -->
+<div class="filter-form">
+    <form method="get" class="row g-3">
+        <div class="col-md-6">
+            <label for="search" class="form-label">Search Ranges</label>
+            <input type="text" class="form-control" id="search" name="search" value="{{ search_query }}" placeholder="Search by range name or publisher...">
+        </div>
+        <div class="col-md-4">
+            <label for="publisher" class="form-label">Publisher</label>
+            <select class="form-select" id="publisher" name="publisher">
+                <option value="">All Publishers</option>
+                {% for pub in publishers %}
+                <option value="{{ pub }}" {% if pub == publisher_filter %}selected{% endif %}>{{ pub }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary me-2">
+                <i class="bi bi-search"></i> Search
+            </button>
+            {% if search_query or publisher_filter %}
+            <a href="{% url 'ranges:list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-x"></i> Clear
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Summary Statistics -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="row">
+            <div class="col-md-3">
+                <div class="card bg-primary text-white stat-card">
+                    <div class="card-body text-center">
+                        <h4>{{ total_ranges }}</h4>
+                        <p class="card-text">Total Ranges</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-success text-white stat-card">
+                    <div class="card-body text-center">
+                        <h4>{{ total_images }}</h4>
+                        <p class="card-text">Total Images</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-info text-white stat-card">
+                    <div class="card-body text-center">
+                        <h4>{{ page_obj.paginator.count }}</h4>
+                        <p class="card-text">Displayed Ranges</p>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card bg-warning text-white stat-card">
+                    <div class="card-body text-center">
+                        <h4>{{ publishers|length }}</h4>
+                        <p class="card-text">Publishers</p>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 </div>
+
+<!-- Results Info -->
+{% if page_obj.object_list %}
+<div class="row mb-3">
+    <div class="col-12">
+        <p class="text-muted">
+            Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }} ranges
+            {% if search_query or publisher_filter %}
+            (filtered)
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+<!-- Ranges List -->
+<div class="row">
+    {% for range_data in page_obj %}
+    <div class="col-lg-6 col-xl-4 mb-4">
+        <div class="card h-100 range-card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <a href="{% url 'ranges:detail' range_data.name %}" class="text-decoration-none">
+                        {{ range_data.name }}
+                    </a>
+                </h5>
+                <span class="badge bg-primary rounded-pill">{{ range_data.total_count }} images</span>
+            </div>
+            <div class="card-body">
+                <h6 class="card-subtitle mb-2 text-muted">Publishers:</h6>
+                {% for publisher, count in range_data.publishers.items %}
+                <div class="publisher-item d-flex justify-content-between align-items-center">
+                    <span class="text-muted">{{ publisher }}</span>
+                    <span class="badge bg-secondary">{{ count }}</span>
+                </div>
+                {% endfor %}
+            </div>
+            <div class="card-footer">
+                <div class="btn-group w-100" role="group">
+                    <a href="{% url 'ranges:detail' range_data.name %}" class="btn btn-outline-primary btn-sm">
+                        <i class="bi bi-eye"></i> View Details
+                    </a>
+                    <a href="{% url 'collection:gallery' %}?range={{ range_data.name }}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-grid"></i> View Images
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if publisher_filter %}&publisher={{ publisher_filter }}{% endif %}">
+                <i class="bi bi-chevron-double-left"></i>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if publisher_filter %}&publisher={{ publisher_filter }}{% endif %}">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        </li>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <li class="page-item active">
+            <span class="page-link">{{ num }}</span>
+        </li>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if publisher_filter %}&publisher={{ publisher_filter }}{% endif %}">{{ num }}</a>
+        </li>
+        {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if publisher_filter %}&publisher={{ publisher_filter }}{% endif %}">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if publisher_filter %}&publisher={{ publisher_filter }}{% endif %}">
+                <i class="bi bi-chevron-double-right"></i>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<!-- No Results -->
+<div class="col-12">
+    <div class="alert alert-info text-center">
+        <h4><i class="bi bi-info-circle"></i> No ranges found</h4>
+        {% if search_query or publisher_filter %}
+        <p>No ranges match your current filters.</p>
+        <a href="{% url 'ranges:list' %}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left"></i> View All Ranges
+        </a>
+        {% else %}
+        <p>No ranges have been added to the collection yet.</p>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
 {% endblock %}
