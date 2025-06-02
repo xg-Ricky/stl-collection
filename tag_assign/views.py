@@ -14,19 +14,18 @@ from tags.models import Tag, TagType
 @staff_member_required
 def assign_tags(request):
     """Bulk tag assignment interface - staff only"""
-    
-    # Get filter parameters
+      # Get filter parameters
     search_query = request.GET.get('search', '')
     publisher_filter = request.GET.get('publisher', '')
     range_filter = request.GET.get('range', '')
     tag_filter = request.GET.get('tag_filter', '')
     tag_type_filter = request.GET.get('tag_type', '')
+    missing_tag_type_filter = request.GET.get('missing_tag_type', '')
     untagged_only = request.GET.get('untagged_only') == 'on'
     
     # Start with all images
     images = Image.objects.all().prefetch_related('tags')
-    
-    # Apply filters
+      # Apply filters
     if search_query:
         images = images.filter(
             Q(name__icontains=search_query) |
@@ -46,13 +45,28 @@ def assign_tags(request):
     if untagged_only:
         images = images.filter(tags__isnull=True)
     
+    # Filter for images missing any tags of a specific tag type
+    if missing_tag_type_filter:
+        try:
+            tag_type_id = int(missing_tag_type_filter)
+            # Get all images that have at least one tag of this type
+            images_with_tag_type = Image.objects.filter(
+                tags__tag_type_id=tag_type_id
+            ).values_list('id', flat=True)
+            # Exclude those images to get images without any tags of this type
+            images = images.exclude(id__in=images_with_tag_type)
+        except (ValueError, TypeError):
+            # If conversion fails, ignore the filter
+            pass
+    
     # Order by upload date (newest first)
     images = images.order_by('-upload_date')
-    
-    # Pagination
+      # Pagination
     paginator = Paginator(images, 24)  # Show 24 images per page
     page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)    # Get all available options for filters
+    page_obj = paginator.get_page(page_number)
+    
+    # Get all available options for filters
     all_publishers = Image.objects.exclude(
         Q(publisher__isnull=True) | Q(publisher='')
     ).values_list('publisher', flat=True).distinct().order_by('publisher')
@@ -75,8 +89,7 @@ def assign_tags(request):
     
     # Get all tag types for the filter dropdown
     tag_types = TagType.objects.filter(is_active=True).order_by('sort_order', 'name')
-    
-    # Statistics
+      # Statistics
     total_images = Image.objects.count()
     untagged_count = Image.objects.filter(tags__isnull=True).count()
     tagged_count = total_images - untagged_count
@@ -93,6 +106,7 @@ def assign_tags(request):
         'range_filter': range_filter,
         'tag_filter': tag_filter,
         'tag_type_filter': tag_type_filter,
+        'missing_tag_type_filter': missing_tag_type_filter,
         'untagged_only': untagged_only,
         'total_images': total_images,
         'untagged_count': untagged_count,
