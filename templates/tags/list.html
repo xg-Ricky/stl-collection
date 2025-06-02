@@ -43,6 +43,15 @@
     border-width: 1px 0 1px 0 !important;
     vertical-align: middle;
 }
+.display-card {
+    transition: none !important;
+}
+
+.display-card:hover {
+    box-shadow: 0 !important;
+    transform: none !important;
+    border-color: var(--bs-border-color) !important;
+}
 </style>
 {% endblock %}
 
@@ -61,7 +70,8 @@
 {% if tags %}
 <div class="row">
     <div class="col-12">
-        <div class="card">            <div class="card-body">
+        <div class="card display-card">            
+            <div class="card-body">
                 <div class="table-responsive">
                     <table class="table table-stable">                        
                         <thead>
