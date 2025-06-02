@@ -32,10 +32,10 @@
                         <tbody>
                             {% for tag in tags %}                            <tr>
                                 <td>
-                                    <span class="badge bg-secondary fs-6">{{ tag.name }}</span>
+                                    <span>{{ tag.name }}</span>
                                 </td>
                                 <td>
-                                    <span class="badge bg-info">{{ tag.get_type_display }}</span>
+                                    <span>{{ tag.tag_type.name }}</span>
                                 </td>
                                 <td>{{ tag.created_at|date:"M d, Y" }}</td>
                                 <td>
