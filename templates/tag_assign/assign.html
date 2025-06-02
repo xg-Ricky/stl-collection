@@ -186,16 +186,35 @@
                 </div>
             </div>
         </div>
-    </div>
-    
-    <!-- Quick Tag Buttons -->
+    </div>    <!-- Quick Tag Buttons -->
     <div class="mt-3">
-        <small class="text-muted">Quick Tags:</small><br>
-        {% for tag in all_tags|slice:":10" %}
-        <span class="badge bg-secondary quick-tag" data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name }}">
-            {{ tag.name }}
-        </span>
-        {% endfor %}
+        <div class="row align-items-center">
+            <div class="col-md-4">
+                <small class="text-muted">Quick Tags:</small>
+            </div>
+            <div class="col-md-8">
+                <select class="form-select form-select-sm" id="tagTypeFilter" onchange="filterQuickTags()">
+                    <option value="">All Types</option>
+                    {% for tag_type in tag_types %}
+                    <option value="{{ tag_type.id }}" {% if tag_type.id|stringformat:"s" == tag_type_filter %}selected{% endif %}>{{ tag_type.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="mt-2" id="quickTagsContainer">
+            {% for tag in quick_tags|slice:":15" %}
+            <span class="badge quick-tag" 
+                  style="background-color: {{ tag.tag_type.color|default:'#6c757d' }};"
+                  data-tag-id="{{ tag.id }}" 
+                  data-tag-name="{{ tag.name }}" 
+                  data-tag-type="{{ tag.tag_type.id }}">
+                {{ tag.name }}
+                {% if tag.tag_type %}
+                <small class="text-muted">({{ tag.tag_type.name }})</small>
+                {% endif %}
+            </span>
+            {% endfor %}
+        </div>
     </div>
 </div>
 
@@ -256,12 +275,12 @@
     <ul class="pagination justify-content-center">
         {% if page_obj.has_previous %}
         <li class="page-item">
-            <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if publisher_filter %}&publisher={{ publisher_filter }}{% endif %}{% if range_filter %}&range={{ range_filter }}{% endif %}{% if tag_filter %}&tag_filter={{ tag_filter }}{% endif %}{% if untagged_only %}&untagged_only=on{% endif %}">
+            <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if publisher_filter %}&publisher={{ publisher_filter }}{% endif %}{% if range_filter %}&range={{ range_filter }}{% endif %}{% if tag_filter %}&tag_filter={{ tag_filter }}{% endif %}{% if tag_type_filter %}&tag_type={{ tag_type_filter }}{% endif %}{% if untagged_only %}&untagged_only=on{% endif %}">
                 <i class="bi bi-chevron-double-left"></i>
             </a>
         </li>
         <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if publisher_filter %}&publisher={{ publisher_filter }}{% endif %}{% if range_filter %}&range={{ range_filter }}{% endif %}{% if tag_filter %}&tag_filter={{ tag_filter }}{% endif %}{% if untagged_only %}&untagged_only=on{% endif %}">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if publisher_filter %}&publisher={{ publisher_filter }}{% endif %}{% if range_filter %}&range={{ range_filter }}{% endif %}{% if tag_filter %}&tag_filter={{ tag_filter }}{% endif %}{% if tag_type_filter %}&tag_type={{ tag_type_filter }}{% endif %}{% if untagged_only %}&untagged_only=on{% endif %}">
                 <i class="bi bi-chevron-left"></i>
             </a>
         </li>
@@ -274,19 +293,19 @@
         </li>
         {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
         <li class="page-item">
-            <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if publisher_filter %}&publisher={{ publisher_filter }}{% endif %}{% if range_filter %}&range={{ range_filter }}{% endif %}{% if tag_filter %}&tag_filter={{ tag_filter }}{% endif %}{% if untagged_only %}&untagged_only=on{% endif %}">{{ num }}</a>
+            <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if publisher_filter %}&publisher={{ publisher_filter }}{% endif %}{% if range_filter %}&range={{ range_filter }}{% endif %}{% if tag_filter %}&tag_filter={{ tag_filter }}{% endif %}{% if tag_type_filter %}&tag_type={{ tag_type_filter }}{% endif %}{% if untagged_only %}&untagged_only=on{% endif %}">{{ num }}</a>
         </li>
         {% endif %}
         {% endfor %}
 
         {% if page_obj.has_next %}
         <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if publisher_filter %}&publisher={{ publisher_filter }}{% endif %}{% if range_filter %}&range={{ range_filter }}{% endif %}{% if tag_filter %}&tag_filter={{ tag_filter }}{% endif %}{% if untagged_only %}&untagged_only=on{% endif %}">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if publisher_filter %}&publisher={{ publisher_filter }}{% endif %}{% if range_filter %}&range={{ range_filter }}{% endif %}{% if tag_filter %}&tag_filter={{ tag_filter }}{% endif %}{% if tag_type_filter %}&tag_type={{ tag_type_filter }}{% endif %}{% if untagged_only %}&untagged_only=on{% endif %}">
                 <i class="bi bi-chevron-right"></i>
             </a>
         </li>
         <li class="page-item">
-            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if publisher_filter %}&publisher={{ publisher_filter }}{% endif %}{% if range_filter %}&range={{ range_filter }}{% endif %}{% if tag_filter %}&tag_filter={{ tag_filter }}{% endif %}{% if untagged_only %}&untagged_only=on{% endif %}">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if publisher_filter %}&publisher={{ publisher_filter }}{% endif %}{% if range_filter %}&range={{ range_filter }}{% endif %}{% if tag_filter %}&tag_filter={{ tag_filter }}{% endif %}{% if tag_type_filter %}&tag_type={{ tag_type_filter }}{% endif %}{% if untagged_only %}&untagged_only=on{% endif %}">
                 <i class="bi bi-chevron-double-right"></i>
             </a>
         </li>
@@ -538,8 +557,7 @@ document.addEventListener('DOMContentLoaded', function() {
             toast.remove();
         });
     }
-    
-    function createToastContainer() {
+      function createToastContainer() {
         const container = document.createElement('div');
         container.id = 'toastContainer';
         container.className = 'toast-container position-fixed top-0 end-0 p-3';
@@ -548,5 +566,20 @@ document.addEventListener('DOMContentLoaded', function() {
         return container;
     }
 });
+
+// Filter quick tags by type (outside DOMContentLoaded to be accessible globally)
+function filterQuickTags() {
+    const selectedType = document.getElementById('tagTypeFilter').value;
+    const currentUrl = new URL(window.location);
+    
+    if (selectedType) {
+        currentUrl.searchParams.set('tag_type', selectedType);
+    } else {
+        currentUrl.searchParams.delete('tag_type');
+    }
+    
+    // Preserve other filter parameters
+    window.location.href = currentUrl.toString();
+}
 </script>
 {% endblock %}

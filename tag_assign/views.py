@@ -9,7 +9,7 @@ from django.contrib import messages
 import json
 
 from image_upload.models import Image
-from tags.models import Tag
+from tags.models import Tag, TagType
 
 @staff_member_required
 def assign_tags(request):
@@ -20,6 +20,7 @@ def assign_tags(request):
     publisher_filter = request.GET.get('publisher', '')
     range_filter = request.GET.get('range', '')
     tag_filter = request.GET.get('tag_filter', '')
+    tag_type_filter = request.GET.get('tag_type', '')
     untagged_only = request.GET.get('untagged_only') == 'on'
     
     # Start with all images
@@ -51,9 +52,7 @@ def assign_tags(request):
     # Pagination
     paginator = Paginator(images, 24)  # Show 24 images per page
     page_number = request.GET.get('page')
-    page_obj = paginator.get_page(page_number)
-    
-    # Get all available options for filters
+    page_obj = paginator.get_page(page_number)    # Get all available options for filters
     all_publishers = Image.objects.exclude(
         Q(publisher__isnull=True) | Q(publisher='')
     ).values_list('publisher', flat=True).distinct().order_by('publisher')
@@ -62,7 +61,20 @@ def assign_tags(request):
         Q(range__isnull=True) | Q(range='')
     ).values_list('range', flat=True).distinct().order_by('range')
     
-    all_tags = Tag.objects.all().order_by('name')
+    all_tags = Tag.objects.all().order_by('tag_type__sort_order', 'tag_type__name', 'name')
+    
+    # Filter quick tags by type if specified
+    quick_tags = all_tags
+    if tag_type_filter:
+        try:
+            tag_type_id = int(tag_type_filter)
+            quick_tags = quick_tags.filter(tag_type_id=tag_type_id)
+        except (ValueError, TypeError):
+            # If conversion fails, show all tags
+            pass
+    
+    # Get all tag types for the filter dropdown
+    tag_types = TagType.objects.filter(is_active=True).order_by('sort_order', 'name')
     
     # Statistics
     total_images = Image.objects.count()
@@ -74,10 +86,13 @@ def assign_tags(request):
         'all_publishers': all_publishers,
         'all_ranges': all_ranges,
         'all_tags': all_tags,
+        'quick_tags': quick_tags,
+        'tag_types': tag_types,
         'search_query': search_query,
         'publisher_filter': publisher_filter,
         'range_filter': range_filter,
         'tag_filter': tag_filter,
+        'tag_type_filter': tag_type_filter,
         'untagged_only': untagged_only,
         'total_images': total_images,
         'untagged_count': untagged_count,
