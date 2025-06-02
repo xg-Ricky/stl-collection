@@ -30,11 +30,12 @@ def gallery(request):
     range_filter = request.GET.get('range', '')
     if range_filter:
         images = images.filter(range__icontains=range_filter)
-    
-    # Filter by tags
+      # Filter by tags (AND logic - image must have ALL selected tags)
     tag_filter = request.GET.getlist('tags')
     if tag_filter:
-        images = images.filter(tags__in=tag_filter).distinct()
+        for tag in tag_filter:
+            images = images.filter(tags=tag)
+        images = images.distinct()
     
     # Get filter options for dropdowns
     publishers = Image.objects.exclude(publisher__isnull=True).exclude(publisher__exact='').values_list('publisher', flat=True).distinct()
