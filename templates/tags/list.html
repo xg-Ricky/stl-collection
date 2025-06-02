@@ -15,6 +15,34 @@
     text-align: center;
     display: inline-block;
 }
+
+/* Prevent table movement on hover */
+.table-stable {
+    border-collapse: separate !important;
+    border-spacing: 0;
+}
+
+.table-stable tbody tr {
+    transition: none !important;
+    border: 1px solid transparent !important;
+}
+
+.table-stable tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid transparent !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.table-stable td {
+    border-width: 1px 0 0 0 !important;
+    vertical-align: middle;
+}
+
+.table-stable th {
+    border-width: 1px 0 1px 0 !important;
+    vertical-align: middle;
+}
 </style>
 {% endblock %}
 
@@ -33,10 +61,9 @@
 {% if tags %}
 <div class="row">
     <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <div class="table">
-                    <table class="table">                        
+        <div class="card">            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-stable">                        
                         <thead>
                             <tr>
                                 <th>Name</th>
