@@ -3,13 +3,550 @@
 {% block title %}Assign Tags - STL Collection{% endblock %}
 
 {% block content %}
+<style>
+.image-card {
+    transition: all 0.2s ease-in-out;
+    cursor: pointer;
+    position: relative;
+}
+.image-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.image-card.selected {
+    border: 3px solid #0d6efd;
+    box-shadow: 0 0 0 2px rgba(13, 110, 253, 0.25);
+}
+.image-card .selection-overlay {
+    position: absolute;
+    top: 5px;
+    left: 5px;
+    background: rgba(13, 110, 253, 0.9);
+    color: white;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+}
+.image-card.selected .selection-overlay {
+    display: flex;
+}
+.tag-assignment-panel {
+    background: var(--bs-light);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    position: sticky;
+    top: 20px;
+    z-index: 100;
+}
+[data-bs-theme="dark"] .tag-assignment-panel {
+    background: var(--bs-dark);
+}
+.quick-tag {
+    cursor: pointer;
+    transition: all 0.2s ease;
+    margin: 0.2rem;
+}
+.quick-tag:hover {
+    transform: scale(1.05);
+}
+.quick-tag.assigned {
+    background-color: var(--bs-success) !important;
+}
+.selection-counter {
+    font-weight: bold;
+    color: var(--bs-primary);
+}
+.stats-row {
+    background: var(--bs-secondary-bg);
+    border-radius: 6px;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+}
+</style>
+
 <div class="row">
     <div class="col-12">
         <h1><i class="bi bi-tags"></i> Assign Tags</h1>
-        <div class="alert alert-info">
-            <h4><i class="bi bi-info-circle"></i> {{ message }}</h4>
-            <p>This feature will allow you to assign tags to multiple images at once.</p>
+        <p class="text-muted">Quickly assign tags to multiple images. Click images to select them, then use the bulk actions below.</p>
+    </div>
+</div>
+
+<!-- Statistics Row -->
+<div class="stats-row">
+    <div class="row text-center">
+        <div class="col-md-3">
+            <h5 class="mb-1">{{ total_images }}</h5>
+            <small class="text-muted">Total Images</small>
+        </div>
+        <div class="col-md-3">
+            <h5 class="mb-1 text-success">{{ tagged_count }}</h5>
+            <small class="text-muted">Tagged</small>
+        </div>
+        <div class="col-md-3">
+            <h5 class="mb-1 text-warning">{{ untagged_count }}</h5>
+            <small class="text-muted">Untagged</small>
+        </div>
+        <div class="col-md-3">
+            <h5 class="mb-1 text-info">{{ filtered_count }}</h5>
+            <small class="text-muted">Shown</small>
         </div>
     </div>
 </div>
+
+<!-- Filter Form -->
+<div class="filter-form">
+    <form method="get" class="row g-3">
+        <div class="col-md-3">
+            <label for="search" class="form-label">Search</label>
+            <input type="text" class="form-control" id="search" name="search" value="{{ search_query }}" placeholder="Search images...">
+        </div>
+        <div class="col-md-2">
+            <label for="publisher" class="form-label">Publisher</label>
+            <select class="form-select" id="publisher" name="publisher">
+                <option value="">All Publishers</option>
+                {% for pub in all_publishers %}
+                <option value="{{ pub }}" {% if pub == publisher_filter %}selected{% endif %}>{{ pub }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label for="range" class="form-label">Range</label>
+            <select class="form-select" id="range" name="range">
+                <option value="">All Ranges</option>
+                {% for range in all_ranges %}
+                <option value="{{ range }}" {% if range == range_filter %}selected{% endif %}>{{ range }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label for="tag_filter" class="form-label">Has Tag</label>
+            <select class="form-select" id="tag_filter" name="tag_filter">
+                <option value="">Any Tag</option>
+                {% for tag in all_tags %}
+                <option value="{{ tag.name }}" {% if tag.name == tag_filter %}selected{% endif %}>{{ tag.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2">
+            <label class="form-label">Options</label>
+            <div class="form-check">
+                <input class="form-check-input" type="checkbox" id="untagged_only" name="untagged_only" {% if untagged_only %}checked{% endif %}>
+                <label class="form-check-label" for="untagged_only">
+                    Untagged only
+                </label>
+            </div>
+        </div>
+        <div class="col-md-1 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary me-2">
+                <i class="bi bi-search"></i>
+            </button>
+            {% if search_query or publisher_filter or range_filter or tag_filter or untagged_only %}
+            <a href="{% url 'tag_assign:assign' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-x"></i>
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Tag Assignment Panel -->
+<div class="tag-assignment-panel">
+    <div class="row align-items-center">
+        <div class="col-md-6">
+            <span class="selection-counter" id="selectionCounter">0 images selected</span>
+            <div class="btn-group ms-3" role="group">
+                <button type="button" class="btn btn-outline-primary btn-sm" id="selectAllBtn">
+                    <i class="bi bi-check-all"></i> Select All
+                </button>
+                <button type="button" class="btn btn-outline-secondary btn-sm" id="clearSelectionBtn">
+                    <i class="bi bi-x"></i> Clear
+                </button>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="d-flex align-items-center">
+                <select class="form-select form-select-sm me-2" id="bulkTagSelect" style="max-width: 200px;">
+                    <option value="">Select tags...</option>
+                    {% for tag in all_tags %}
+                    <option value="{{ tag.id }}">{{ tag.name }}</option>
+                    {% endfor %}
+                </select>
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-success btn-sm" id="addTagsBtn">
+                        <i class="bi bi-plus"></i> Add
+                    </button>
+                    <button type="button" class="btn btn-danger btn-sm" id="removeTagsBtn">
+                        <i class="bi bi-dash"></i> Remove
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Tag Buttons -->
+    <div class="mt-3">
+        <small class="text-muted">Quick Tags:</small><br>
+        {% for tag in all_tags|slice:":10" %}
+        <span class="badge bg-secondary quick-tag" data-tag-id="{{ tag.id }}" data-tag-name="{{ tag.name }}">
+            {{ tag.name }}
+        </span>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Results Info -->
+{% if page_obj.object_list %}
+<div class="row mb-3">
+    <div class="col-12">
+        <p class="text-muted">
+            Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }} images
+            {% if search_query or publisher_filter or range_filter or tag_filter or untagged_only %}
+            (filtered)
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+<!-- Images Grid -->
+<div class="row" id="imagesGrid">
+    {% for image in page_obj %}
+    <div class="col-md-3 col-lg-2 mb-4">
+        <div class="card image-card" data-image-id="{{ image.id }}">
+            <div class="selection-overlay">
+                <i class="bi bi-check"></i>
+            </div>
+            <div class="card-img-container">
+                <img src="{{ image.image.url }}" class="card-img-top" alt="{{ image.name }}">
+            </div>
+            <div class="card-body p-2">
+                <h6 class="card-title mb-1" style="font-size: 0.8rem;">{{ image.name|truncatechars:20 }}</h6>
+                <div class="mb-2">
+                    {% for tag in image.tags.all %}
+                    <span class="badge bg-primary tag-badge quick-tag assigned" 
+                          data-tag-id="{{ tag.id }}" 
+                          data-tag-name="{{ tag.name }}"
+                          data-image-id="{{ image.id }}">
+                        {{ tag.name }}
+                    </span>
+                    {% empty %}
+                    <small class="text-muted">No tags</small>
+                    {% endfor %}
+                </div>
+                {% if image.publisher or image.range %}
+                <small class="text-muted d-block">
+                    {% if image.publisher %}{{ image.publisher }}{% endif %}
+                    {% if image.publisher and image.range %} - {% endif %}
+                    {% if image.range %}{{ image.range }}{% endif %}
+                </small>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if publisher_filter %}&publisher={{ publisher_filter }}{% endif %}{% if range_filter %}&range={{ range_filter }}{% endif %}{% if tag_filter %}&tag_filter={{ tag_filter }}{% endif %}{% if untagged_only %}&untagged_only=on{% endif %}">
+                <i class="bi bi-chevron-double-left"></i>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if publisher_filter %}&publisher={{ publisher_filter }}{% endif %}{% if range_filter %}&range={{ range_filter }}{% endif %}{% if tag_filter %}&tag_filter={{ tag_filter }}{% endif %}{% if untagged_only %}&untagged_only=on{% endif %}">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        </li>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <li class="page-item active">
+            <span class="page-link">{{ num }}</span>
+        </li>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if publisher_filter %}&publisher={{ publisher_filter }}{% endif %}{% if range_filter %}&range={{ range_filter }}{% endif %}{% if tag_filter %}&tag_filter={{ tag_filter }}{% endif %}{% if untagged_only %}&untagged_only=on{% endif %}">{{ num }}</a>
+        </li>
+        {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if publisher_filter %}&publisher={{ publisher_filter }}{% endif %}{% if range_filter %}&range={{ range_filter }}{% endif %}{% if tag_filter %}&tag_filter={{ tag_filter }}{% endif %}{% if untagged_only %}&untagged_only=on{% endif %}">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if publisher_filter %}&publisher={{ publisher_filter }}{% endif %}{% if range_filter %}&range={{ range_filter }}{% endif %}{% if tag_filter %}&tag_filter={{ tag_filter }}{% endif %}{% if untagged_only %}&untagged_only=on{% endif %}">
+                <i class="bi bi-chevron-double-right"></i>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<!-- No Results -->
+<div class="col-12">
+    <div class="alert alert-info text-center">
+        <h4><i class="bi bi-info-circle"></i> No images found</h4>
+        {% if search_query or publisher_filter or range_filter or tag_filter or untagged_only %}
+        <p>No images match your current filters.</p>
+        <a href="{% url 'tag_assign:assign' %}" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-left"></i> View All Images
+        </a>
+        {% else %}
+        <p>No images have been uploaded yet.</p>
+        <a href="{% url 'image_upload:upload' %}" class="btn btn-primary">
+            <i class="bi bi-upload"></i> Upload Images
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Loading Modal -->
+<div class="modal fade" id="loadingModal" tabindex="-1" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-body text-center">
+                <div class="spinner-border text-primary" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                </div>
+                <p class="mt-3 mb-0">Processing tag assignments...</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    let selectedImages = new Set();
+    const loadingModal = new bootstrap.Modal(document.getElementById('loadingModal'));
+    
+    // Image selection
+    document.querySelectorAll('.image-card').forEach(card => {
+        card.addEventListener('click', function(e) {
+            // Don't trigger if clicking on a tag
+            if (e.target.classList.contains('quick-tag')) return;
+            
+            const imageId = this.dataset.imageId;
+            
+            if (selectedImages.has(imageId)) {
+                selectedImages.delete(imageId);
+                this.classList.remove('selected');
+            } else {
+                selectedImages.add(imageId);
+                this.classList.add('selected');
+            }
+            
+            updateSelectionCounter();
+        });
+    });
+    
+    // Select All button
+    document.getElementById('selectAllBtn').addEventListener('click', function() {
+        document.querySelectorAll('.image-card').forEach(card => {
+            const imageId = card.dataset.imageId;
+            selectedImages.add(imageId);
+            card.classList.add('selected');
+        });
+        updateSelectionCounter();
+    });
+    
+    // Clear Selection button
+    document.getElementById('clearSelectionBtn').addEventListener('click', function() {
+        selectedImages.clear();
+        document.querySelectorAll('.image-card').forEach(card => {
+            card.classList.remove('selected');
+        });
+        updateSelectionCounter();
+    });
+    
+    // Update selection counter
+    function updateSelectionCounter() {
+        const count = selectedImages.size;
+        document.getElementById('selectionCounter').textContent = `${count} image${count !== 1 ? 's' : ''} selected`;
+    }
+    
+    // Bulk tag assignment
+    document.getElementById('addTagsBtn').addEventListener('click', function() {
+        performBulkAction('add');
+    });
+    
+    document.getElementById('removeTagsBtn').addEventListener('click', function() {
+        performBulkAction('remove');
+    });
+    
+    // Quick tag assignment
+    document.querySelectorAll('.quick-tag:not(.assigned)').forEach(tag => {
+        tag.addEventListener('click', function() {
+            const tagId = this.dataset.tagId;
+            const tagName = this.dataset.tagName;
+            
+            if (selectedImages.size === 0) {
+                alert('Please select at least one image first.');
+                return;
+            }
+            
+            quickAssignTag(tagId, tagName);
+        });
+    });
+    
+    // Individual tag removal
+    document.querySelectorAll('.quick-tag.assigned').forEach(tag => {
+        tag.addEventListener('click', function(e) {
+            e.stopPropagation();
+            const tagId = this.dataset.tagId;
+            const imageId = this.dataset.imageId;
+            
+            removeTagFromImage(imageId, tagId, this);
+        });
+    });
+    
+    function performBulkAction(action) {
+        const tagSelect = document.getElementById('bulkTagSelect');
+        const tagId = tagSelect.value;
+        
+        if (!tagId) {
+            alert('Please select a tag first.');
+            return;
+        }
+        
+        if (selectedImages.size === 0) {
+            alert('Please select at least one image first.');
+            return;
+        }
+        
+        loadingModal.show();
+        
+        fetch('{% url "tag_assign:bulk_assign" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                image_ids: Array.from(selectedImages),
+                tag_ids: [tagId],
+                action: action
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            loadingModal.hide();
+            if (data.success) {
+                // Show success message
+                showToast(data.message, 'success');
+                // Reload page to show updated tags
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast('Error: ' + data.error, 'danger');
+            }
+        })
+        .catch(error => {
+            loadingModal.hide();
+            showToast('Network error occurred', 'danger');
+        });
+    }
+    
+    function quickAssignTag(tagId, tagName) {
+        loadingModal.show();
+        
+        fetch('{% url "tag_assign:bulk_assign" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                image_ids: Array.from(selectedImages),
+                tag_ids: [tagId],
+                action: 'add'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            loadingModal.hide();
+            if (data.success) {
+                showToast(`Added "${tagName}" to ${selectedImages.size} image(s)`, 'success');
+                setTimeout(() => location.reload(), 1000);
+            } else {
+                showToast('Error: ' + data.error, 'danger');
+            }
+        })
+        .catch(error => {
+            loadingModal.hide();
+            showToast('Network error occurred', 'danger');
+        });
+    }
+    
+    function removeTagFromImage(imageId, tagId, element) {
+        fetch('{% url "tag_assign:quick_assign" %}', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            body: JSON.stringify({
+                image_id: imageId,
+                tag_id: tagId,
+                action: 'remove'
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                element.remove();
+                showToast('Tag removed', 'success');
+            } else {
+                showToast('Error: ' + data.error, 'danger');
+            }
+        })
+        .catch(error => {
+            showToast('Network error occurred', 'danger');
+        });
+    }
+    
+    function showToast(message, type) {
+        const toastContainer = document.getElementById('toastContainer') || createToastContainer();
+        const toast = document.createElement('div');
+        toast.className = `toast align-items-center text-bg-${type} border-0`;
+        toast.setAttribute('role', 'alert');
+        toast.innerHTML = `
+            <div class="d-flex">
+                <div class="toast-body">${message}</div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+            </div>
+        `;
+        
+        toastContainer.appendChild(toast);
+        const bsToast = new bootstrap.Toast(toast);
+        bsToast.show();
+        
+        toast.addEventListener('hidden.bs.toast', () => {
+            toast.remove();
+        });
+    }
+    
+    function createToastContainer() {
+        const container = document.createElement('div');
+        container.id = 'toastContainer';
+        container.className = 'toast-container position-fixed top-0 end-0 p-3';
+        container.style.zIndex = '1056';
+        document.body.appendChild(container);
+        return container;
+    }
+});
+</script>
 {% endblock %}
