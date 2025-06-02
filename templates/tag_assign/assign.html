@@ -55,7 +55,7 @@
     transform: scale(1.05);
 }
 .quick-tag.assigned {
-    background-color: var(--bs-success) !important;
+    /* Removed background-color override to allow tag type colors */
 }
 .selection-counter {
     font-weight: bold;
@@ -240,7 +240,7 @@
                 <h6 class="card-title mb-1" style="font-size: 0.8rem;">{{ image.name|truncatechars:20 }}</h6>
                 <div class="mb-2">                    {% for tag in image.tags.all %}
                     <span class="badge tag-badge quick-tag assigned" 
-                          style="background-color: {{ tag.get_color }}; color: {{ tag.get_text_color }};"
+                          style="background-color: {{ tag.get_color }} !important; color: {{ tag.get_text_color }} !important;"
                           data-tag-id="{{ tag.id }}" 
                           data-tag-name="{{ tag.name }}"
                           data-image-id="{{ image.id }}">
