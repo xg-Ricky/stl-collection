@@ -9,7 +9,17 @@ def tag_list(request):
     """List all tags - staff only"""
     tags = Tag.objects.all()
     return render(request, 'tags/list.html', {
-        'tags': tags
+        'tags': tags,
+        'active_tab': 'tags'
+    })
+
+@staff_member_required
+def tagtype_list(request):
+    """List all tag types - staff only"""
+    tagtypes = TagType.objects.all()
+    return render(request, 'tags/list.html', {
+        'tagtypes': tagtypes,
+        'active_tab': 'tagtypes'
     })
 
 @staff_member_required
@@ -70,7 +80,7 @@ def create_tagtype(request):
         if form.is_valid():
             tagtype = form.save()
             messages.success(request, f'Successfully created tag type "{tagtype.name}"!')
-            return redirect('tags:list')
+            return redirect('tags:tagtype_list')
     else:
         form = TagTypeForm()
     
@@ -88,7 +98,7 @@ def edit_tagtype(request, tagtype_id):
         if form.is_valid():
             form.save()
             messages.success(request, f'Successfully updated tag type "{tagtype.name}"!')
-            return redirect('tags:list')
+            return redirect('tags:tagtype_list')
     else:
         form = TagTypeForm(instance=tagtype)
     
@@ -107,11 +117,11 @@ def delete_tagtype(request, tagtype_id):
         # Check if there are tags using this type
         if tagtype.tags.exists():
             messages.error(request, f'Cannot delete tag type "{tagtype_name}" because it is being used by {tagtype.tags.count()} tag(s).')
-            return redirect('tags:list')
+            return redirect('tags:tagtype_list')
         
         tagtype.delete()
         messages.success(request, f'Successfully deleted tag type "{tagtype_name}"!')
-        return redirect('tags:list')
+        return redirect('tags:tagtype_list')
     
     return render(request, 'tags/delete_tagtype.html', {
         'tagtype': tagtype
