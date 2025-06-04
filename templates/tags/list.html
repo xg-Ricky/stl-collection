@@ -1,0 +1,303 @@
+{% extends 'base.html' %}
+
+{% block title %}Manage Tags - STL Collection{% endblock %}
+
+{% block extra_css %}
+<style>
+.tag-type-badge {
+    border-radius: 12px;
+    padding: 4px 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    min-width: 80px;
+    text-align: center;
+    display: inline-block;
+}
+
+/* Prevent table movement on hover */
+.table-stable {
+    border-collapse: separate !important;
+    border-spacing: 0;
+}
+
+.table-stable tbody tr {
+    transition: none !important;
+    border: 1px solid transparent !important;
+}
+
+.table-stable tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.05) !important;
+    border: 1px solid transparent !important;
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.table-stable td {
+    border-width: 1px 0 0 0 !important;
+    vertical-align: middle;
+}
+
+.table-stable th {
+    border-width: 1px 0 1px 0 !important;
+    vertical-align: middle;
+}
+
+.display-card {
+    transition: none !important;
+}
+
+.display-card:hover {
+    box-shadow: 0 !important;
+    transform: none !important;
+    border-color: var(--bs-border-color) !important;
+}
+
+.color-preview {
+    width: 20px;
+    height: 20px;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+    display: inline-block;
+    vertical-align: middle;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1><i class="bi bi-tags"></i> Manage Tags</h1>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <!-- Tab Navigation -->
+        <ul class="nav nav-tabs mb-3" id="tagTabs" role="tablist">
+            <li class="nav-item" role="presentation">
+                <a class="nav-link {% if active_tab == 'tags' %}active{% endif %}" 
+                   href="{% url 'tags:list' %}" role="tab">
+                    <i class="bi bi-tags"></i> Tags
+                </a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link {% if active_tab == 'tagtypes' %}active{% endif %}" 
+                   href="{% url 'tags:tagtype_list' %}" role="tab">
+                    <i class="bi bi-grid"></i> Tag Types
+                </a>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="tagTabContent">
+            {% if active_tab == 'tags' %}                <!-- Tags Tab -->
+                <div class="tab-pane fade show active">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3>Tags</h3>
+                        <a href="{% url 'tags:create' %}" class="btn btn-primary">
+                            <i class="bi bi-plus-lg"></i> Create New Tag
+                        </a>
+                    </div>
+
+                    <!-- Filter Section -->
+                    <div class="card mb-3">
+                        <div class="card-body">
+                            <form method="get" class="row g-3 align-items-end">
+                                <div class="col-md-3">
+                                    <label for="tagTypeFilter" class="form-label">Filter by Tag Type</label>
+                                    <select name="tag_type" id="tagTypeFilter" class="form-select" onchange="this.form.submit()">
+                                        <option value="">All Types</option>
+                                        <option value="none" {% if selected_tag_type == 'none' %}selected{% endif %}>No Type</option>
+                                        {% for tag_type in tag_types %}
+                                            <option value="{{ tag_type.id }}" 
+                                                    {% if selected_tag_type == tag_type.id|stringformat:"s" %}selected{% endif %}>
+                                                {{ tag_type.name }}
+                                            </option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="col-md-2">
+                                    <button type="submit" class="btn btn-outline-secondary">
+                                        <i class="bi bi-funnel"></i> Filter
+                                    </button>
+                                </div>
+                                {% if selected_tag_type %}
+                                    <div class="col-md-2">
+                                        <a href="{% url 'tags:list' %}" class="btn btn-outline-danger">
+                                            <i class="bi bi-x-circle"></i> Clear
+                                        </a>
+                                    </div>
+                                {% endif %}
+                            </form>
+                        </div>
+                    </div>                    {% if tags %}
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <small class="text-muted">
+                                Showing {{ tags|length }} tag{{ tags|length|pluralize }}
+                                {% if selected_tag_type %}
+                                    {% if selected_tag_type == 'none' %}
+                                        without a tag type
+                                    {% else %}
+                                        {% for tag_type in tag_types %}
+                                            {% if tag_type.id|stringformat:"s" == selected_tag_type %}
+                                                for "{{ tag_type.name }}" type
+                                            {% endif %}
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endif %}
+                            </small>
+                        </div>
+                        
+                        <div class="card display-card">            
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-stable">                        
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Type</th>
+                                                <th>Created</th>
+                                                <th>Usage Count</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for tag in tags %}                            
+                                            <tr>
+                                                <td>
+                                                    <span>{{ tag.name }}</span>
+                                                </td>                                
+                                                <td>
+                                                    {% if tag.tag_type %}
+                                                        <span class="badge" style="background-color: {{ tag.tag_type.color }}; color: white; font-weight: 500;">
+                                                            {{ tag.tag_type.name }}
+                                                        </span>
+                                                    {% else %}
+                                                        <span class="badge bg-secondary">No Type</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td>{{ tag.created_at|date:"M d, Y" }}</td>
+                                                <td>
+                                                    <span class="badge bg-info">{{ tag.image_set.count }}</span>
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group" role="group">
+                                                        <a href="{% url 'tags:edit' tag.id %}" class="btn btn-sm btn-outline-primary">
+                                                            <i class="bi bi-pencil"></i> Edit
+                                                        </a>
+                                                        <a href="{% url 'tags:delete' tag.id %}" class="btn btn-sm btn-outline-danger">
+                                                            <i class="bi bi-trash"></i> Delete
+                                                        </a>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>                    {% else %}
+                        <div class="alert alert-info text-center">
+                            {% if selected_tag_type %}
+                                <h4><i class="bi bi-info-circle"></i> No tags found for this filter</h4>
+                                <p>
+                                    {% if selected_tag_type == 'none' %}
+                                        No tags without a tag type found.
+                                    {% else %}
+                                        No tags found for the selected tag type.
+                                    {% endif %}
+                                </p>
+                                <a href="{% url 'tags:list' %}" class="btn btn-outline-secondary me-2">
+                                    <i class="bi bi-arrow-left"></i> Show All Tags
+                                </a>
+                                <a href="{% url 'tags:create' %}" class="btn btn-primary">
+                                    <i class="bi bi-plus-lg"></i> Create New Tag
+                                </a>
+                            {% else %}
+                                <h4><i class="bi bi-info-circle"></i> No tags created yet</h4>
+                                <p>Create your first tag to start organizing your collection.</p>
+                                <a href="{% url 'tags:create' %}" class="btn btn-primary">
+                                    <i class="bi bi-plus-lg"></i> Create Your First Tag
+                                </a>
+                            {% endif %}
+                        </div>
+                    {% endif %}
+                </div>
+            {% elif active_tab == 'tagtypes' %}
+                <!-- Tag Types Tab -->
+                <div class="tab-pane fade show active">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h3>Tag Types</h3>
+                        <a href="{% url 'tags:create_tagtype' %}" class="btn btn-primary">
+                            <i class="bi bi-plus-lg"></i> Create New Tag Type
+                        </a>
+                    </div>
+
+                    {% if tagtypes %}
+                        <div class="card display-card">            
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-stable">                        
+                                        <thead>
+                                            <tr>
+                                                <th>Name</th>
+                                                <th>Color</th>
+                                                <th>Created</th>
+                                                <th>Tags Using This Type</th>
+                                                <th>Actions</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for tagtype in tagtypes %}                            
+                                            <tr>
+                                                <td>
+                                                    <span>{{ tagtype.name }}</span>
+                                                </td>                                
+                                                <td>
+                                                    <div class="d-flex align-items-center">
+                                                        <span class="color-preview me-2" style="background-color: {{ tagtype.color }};"></span>
+                                                        <span class="badge" style="background-color: {{ tagtype.color }}; color: white; font-weight: 500;">
+                                                            {{ tagtype.color }}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                                <td>{{ tagtype.created_at|date:"M d, Y" }}</td>
+                                                <td>
+                                                    <span class="badge bg-info">{{ tagtype.tags.count }}</span>
+                                                </td>
+                                                <td>
+                                                    <div class="btn-group" role="group">
+                                                        <a href="{% url 'tags:edit_tagtype' tagtype.id %}" class="btn btn-sm btn-outline-primary">
+                                                            <i class="bi bi-pencil"></i> Edit
+                                                        </a>
+                                                        <a href="{% url 'tags:delete_tagtype' tagtype.id %}" class="btn btn-sm btn-outline-danger">
+                                                            <i class="bi bi-trash"></i> Delete
+                                                        </a>
+                                                    </div>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-info text-center">
+                            <h4><i class="bi bi-info-circle"></i> No tag types created yet</h4>
+                            <p>Create your first tag type to start categorizing your tags.</p>
+                            <a href="{% url 'tags:create_tagtype' %}" class="btn btn-primary">
+                                <i class="bi bi-plus-lg"></i> Create Your First Tag Type
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

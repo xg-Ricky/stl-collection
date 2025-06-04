@@ -1,0 +1,28 @@
+{% extends 'base.html' %}
+
+{% block title %}Logged Out - STL Collection Manager{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6 col-lg-4">
+        <div class="card">
+            <div class="card-header text-center bg-success text-white">
+                <h4><i class="bi bi-check-circle"></i> Logged Out</h4>
+            </div>
+            <div class="card-body text-center">
+                <p>You have been successfully logged out.</p>
+                <p>Thank you for using STL Collection Manager!</p>
+                
+                <div class="d-grid gap-2">
+                    <a href="{% url 'landing_page' %}" class="btn btn-primary">
+                        <i class="bi bi-house"></i> Go to Home Page
+                    </a>
+                    <a href="{% url 'login' %}" class="btn btn-outline-secondary">
+                        <i class="bi bi-box-arrow-in-right"></i> Login Again
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
