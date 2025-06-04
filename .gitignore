@@ -1,5 +1,9 @@
 */uploaded_images/
 
+*.md
+aiprompt.txt
+
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
