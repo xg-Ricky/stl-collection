@@ -1,0 +1,240 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ range_name }} - Range Detail - STL Collection{% endblock %}
+
+{% block content %}
+{% if error %}
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-danger">
+            <h4><i class="bi bi-exclamation-triangle"></i> {{ error }}</h4>
+            <p>The range "{{ range_name }}" could not be found.</p>
+            <a href="{% url 'ranges:list' %}" class="btn btn-primary">
+                <i class="bi bi-arrow-left"></i> Back to Ranges
+            </a>
+        </div>
+    </div>
+</div>
+{% else %}
+<!-- Header -->
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="{% url 'ranges:list' %}">Ranges</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{ range_name }}</li>
+            </ol>
+        </nav>
+        <h1><i class="bi bi-collection"></i> {{ range_name }}</h1>
+        <p class="text-muted">Detailed view of all images in the {{ range_name }} range.</p>
+    </div>
+</div>
+
+<!-- Range Statistics -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="bi bi-bar-chart"></i> Range Statistics</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="text-primary">{{ total_images }}</h4>
+                            <p class="text-muted">Total Images</p>
+                        </div>
+                    </div>
+                    <div class="col-md-9">
+                        <h6>Images by Publisher:</h6>
+                        <div class="row">
+                            {% for stat in range_stats %}
+                            <div class="col-md-4 mb-2">
+                                <div class="d-flex justify-content-between">
+                                    <span>{{ stat.publisher|default:"Unknown" }}</span>
+                                    <span class="badge bg-secondary">{{ stat.count }}</span>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Search and Filter Form -->
+<div class="filter-form">
+    <form method="get" class="row g-3">
+        <div class="col-md-6">
+            <label for="search" class="form-label">Search Images</label>
+            <input type="text" class="form-control" id="search" name="search" value="{{ search_query }}" placeholder="Search by name, publisher, or tags...">
+        </div>
+        <div class="col-md-4">
+            <label for="publisher" class="form-label">Publisher</label>
+            <select class="form-select" id="publisher" name="publisher">
+                <option value="">All Publishers</option>
+                {% for pub in publishers %}
+                <option value="{{ pub }}" {% if pub == publisher_filter %}selected{% endif %}>{{ pub }}</option>
+                {% endfor %}
+            </select>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+            <button type="submit" class="btn btn-primary me-2">
+                <i class="bi bi-search"></i>
+            </button>
+            {% if search_query or publisher_filter %}
+            <a href="{% url 'ranges:detail' range_name %}" class="btn btn-outline-secondary">
+                <i class="bi bi-x"></i> Clear
+            </a>
+            {% endif %}
+        </div>
+    </form>
+</div>
+
+<!-- Results Info -->
+{% if page_obj.object_list %}
+<div class="row mb-3">
+    <div class="col-12">
+        <p class="text-muted">
+            Showing {{ page_obj.start_index }}-{{ page_obj.end_index }} of {{ page_obj.paginator.count }} images
+            {% if search_query or publisher_filter %}
+            (filtered)
+            {% endif %}
+        </p>
+    </div>
+</div>
+
+<!-- Images Grid -->
+<div class="row">
+    {% for image in page_obj %}
+    <div class="col-lg-3 col-md-4 col-sm-6 mb-4">
+        <div class="card h-100">
+            {% if image.image %}
+            <div class="card-img-container" style="height: 200px; overflow: hidden;">
+                <img src="{{ image.image.url }}" 
+                     class="card-img-top w-100 h-100" 
+                     alt="{{ image.name }}"
+                     style="object-fit: cover;">
+            </div>
+            {% else %}
+            <div class="card-img-container bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                <i class="bi bi-file-earmark text-muted" style="font-size: 3rem;"></i>
+            </div>
+            {% endif %}
+            <div class="card-body d-flex flex-column p-3">
+                <h6 class="card-title">{{ image.name }}</h6>
+                {% if image.publisher %}
+                <p class="card-text"><small class="text-muted">by {{ image.publisher }}</small></p>
+                {% endif %}                {% if image.tags.exists %}
+                <div class="mb-2">
+                    {% for tag in image.tags.all %}
+                    <span class="badge me-1" style="background-color: {{ tag.get_color }}; color: {{ tag.get_text_color }};">{{ tag.name }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <div class="mt-auto">
+                    <p class="card-text"><small class="text-muted">{{ image.upload_date|date:"M d, Y" }}</small></p>
+                </div>
+            </div>
+            <div class="card-footer">
+                <div class="btn-group w-100" role="group">
+                    <a href="{% url 'image_details:detail' image.id %}" class="btn btn-primary btn-sm">
+                        <i class="bi bi-eye"></i> View
+                    </a>
+                    {% if user.is_staff %}
+                    <a href="{% url 'collection:edit' image.id %}" class="btn btn-outline-secondary btn-sm">
+                        <i class="bi bi-pencil"></i> Edit
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if page_obj.has_other_pages %}
+<nav aria-label="Page navigation">
+    <ul class="pagination justify-content-center">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page=1{% if search_query %}&search={{ search_query }}{% endif %}{% if publisher_filter %}&publisher={{ publisher_filter }}{% endif %}">
+                <i class="bi bi-chevron-double-left"></i>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if publisher_filter %}&publisher={{ publisher_filter }}{% endif %}">
+                <i class="bi bi-chevron-left"></i>
+            </a>
+        </li>
+        {% endif %}
+
+        {% for num in page_obj.paginator.page_range %}
+        {% if page_obj.number == num %}
+        <li class="page-item active">
+            <span class="page-link">{{ num }}</span>
+        </li>
+        {% elif num > page_obj.number|add:'-3' and num < page_obj.number|add:'3' %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ num }}{% if search_query %}&search={{ search_query }}{% endif %}{% if publisher_filter %}&publisher={{ publisher_filter }}{% endif %}">{{ num }}</a>
+        </li>
+        {% endif %}
+        {% endfor %}
+
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}{% if search_query %}&search={{ search_query }}{% endif %}{% if publisher_filter %}&publisher={{ publisher_filter }}{% endif %}">
+                <i class="bi bi-chevron-right"></i>
+            </a>
+        </li>
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.paginator.num_pages }}{% if search_query %}&search={{ search_query }}{% endif %}{% if publisher_filter %}&publisher={{ publisher_filter }}{% endif %}">
+                <i class="bi bi-chevron-double-right"></i>
+            </a>
+        </li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<!-- No Results -->
+<div class="row">
+    <div class="col-12">
+        <div class="alert alert-info text-center">
+            <h4><i class="bi bi-info-circle"></i> No images found</h4>
+            {% if search_query or publisher_filter %}
+            <p>No images match your current filters in this range.</p>
+            <a href="{% url 'ranges:detail' range_name %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i> View All Images in Range
+            </a>
+            {% else %}
+            <p>This range doesn't contain any images yet.</p>
+            <a href="{% url 'ranges:list' %}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i> Back to Ranges
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Action Buttons -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="d-flex gap-2">
+            <a href="{% url 'ranges:list' %}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Back to Ranges
+            </a>
+            <a href="{% url 'collection:gallery' %}?range={{ range_name }}" class="btn btn-primary">
+                <i class="bi bi-grid"></i> View in Gallery
+            </a>
+        </div>
+    </div>
+</div>
+
+{% endif %}
+{% endblock %}

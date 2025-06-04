@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Delete Tag Type: {{ tagtype.name }} - STL Collection{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 offset-md-3">
+        <div class="card border-danger">
+            <div class="card-header bg-danger text-white">
+                <h3><i class="bi bi-exclamation-triangle"></i> Delete Tag Type</h3>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <h5 class="alert-heading">
+                        <i class="bi bi-exclamation-triangle-fill"></i> Confirm Deletion
+                    </h5>
+                    <p>
+                        Are you sure you want to delete the tag type 
+                        <strong>"{{ tagtype.name }}"</strong>?
+                    </p>
+                    {% if tagtype.tags.exists %}
+                        <hr>
+                        <p class="mb-0">
+                            <i class="bi bi-info-circle-fill"></i>
+                            <strong>Warning:</strong> This tag type is currently used by 
+                            <strong>{{ tagtype.tags.count }}</strong> tag(s). 
+                            You cannot delete this tag type until all associated tags are either 
+                            deleted or assigned to a different tag type.
+                        </p>
+                    {% else %}
+                        <hr>
+                        <p class="mb-0">
+                            <i class="bi bi-check-circle-fill"></i>
+                            This tag type is not being used by any tags and can be safely deleted.
+                        </p>
+                    {% endif %}
+                </div>
+
+                {% if tagtype.tags.exists %}
+                    <div class="mb-3">
+                        <h6>Tags currently using this type:</h6>
+                        <div class="d-flex flex-wrap gap-2">
+                            {% for tag in tagtype.tags.all|slice:":10" %}
+                                <span class="badge" style="background-color: {{ tagtype.color }}; color: white;">
+                                    {{ tag.name }}
+                                </span>
+                            {% endfor %}
+                            {% if tagtype.tags.count > 10 %}
+                                <span class="badge bg-secondary">
+                                    +{{ tagtype.tags.count|add:"-10" }} more...
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endif %}
+
+                <form method="post" class="d-grid gap-2 d-md-flex justify-content-md-end">
+                    {% csrf_token %}
+                    <a href="{% url 'tags:list' %}" class="btn btn-secondary me-md-2">
+                        <i class="bi bi-arrow-left"></i> Cancel
+                    </a>
+                    {% if not tagtype.tags.exists %}
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-trash"></i> Yes, Delete Tag Type
+                        </button>
+                    {% else %}
+                        <button type="button" class="btn btn-danger" disabled>
+                            <i class="bi bi-trash"></i> Cannot Delete (In Use)
+                        </button>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

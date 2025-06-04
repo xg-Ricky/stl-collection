@@ -1,0 +1,137 @@
+{% extends 'base.html' %}
+
+{% block title %}STL Collection Manager - Home{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="jumbotron bg-primary text-white rounded p-5 mb-4">
+            <h1 class="display-4"><i class="bi bi-box-seam"></i> Welcome to STL Collection Manager</h1>
+            <p class="lead">Manage your 3D STL file collections with ease. Upload, organize, and discover your digital assets.</p>
+            <hr class="my-4">
+            <p>Browse your collection, upload new files, and organize them with tags and metadata.</p>
+            <a class="btn btn-light btn-lg" href="{% url 'collection:gallery' %}" role="button">
+                <i class="bi bi-grid"></i> Browse Collection
+            </a>
+            {% if user.is_staff %}
+            <a class="btn btn-outline-light btn-lg ms-2" href="{% url 'image_upload:upload' %}" role="button">
+                <i class="bi bi-upload"></i> Upload Files
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+{% if latest_images %}
+<div class="row">
+    <div class="col-12">
+        <h2><i class="bi bi-clock-history"></i> Latest Uploads</h2>
+        <p class="text-muted">Here are the most recently uploaded items to your collection.</p>
+    </div>
+</div>
+
+<div class="row">
+    {% for image in latest_images %}
+    <div class="col-lg-3 col-md-6 mb-4">
+        <div class="card h-100">
+            {% if image.image %}
+            <img src="{{ image.image.url }}" class="card-img-top" alt="{{ image.name }}">
+            {% else %}
+            <div class="card-img-top bg-light d-flex align-items-center justify-content-center">
+                <i class="bi bi-file-earmark text-muted" style="font-size: 3rem;"></i>
+            </div>
+            {% endif %}
+            <div class="card-body">
+                <h5 class="card-title">{{ image.name }}</h5>
+                {% if image.publisher %}
+                <p class="card-text"><small class="text-muted">by {{ image.publisher }}</small></p>
+                {% endif %}
+                {% if image.range %}
+                <p class="card-text"><small class="text-muted">Range: {{ image.range }}</small></p>
+                {% endif %}                {% if image.tags.exists %}
+                <div class="mb-2">
+                    {% for tag in image.tags.all %}
+                    <span class="badge tag-badge" style="background-color: {{ tag.get_color }}; color: {{ tag.get_text_color }};">{{ tag.name }}</span>
+                    {% endfor %}
+                </div>
+                {% endif %}
+                <p class="card-text"><small class="text-muted">Uploaded {{ image.upload_date|date:"M d, Y" }}</small></p>
+            </div>
+            <div class="card-footer">
+                <a href="{% url 'image_details:detail' image.id %}" class="btn btn-primary btn-sm">
+                    <i class="bi bi-eye"></i> View Details
+                </a>
+                {% if user.is_staff %}
+                <a href="{% url 'collection:edit' image.id %}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-pencil"></i> Edit
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<div class="row">
+    <div class="col-12 text-center">
+        <a href="{% url 'collection:gallery' %}" class="btn btn-primary">
+            <i class="bi bi-grid"></i> View All Items
+        </a>
+    </div>
+</div>
+{% else %}
+<div class="row">
+    <div class="col-12 text-center">
+        <div class="alert alert-info">
+            <h4><i class="bi bi-info-circle"></i> No items in collection yet</h4>
+            <p>Start building your collection by uploading your first STL file!</p>
+            {% if user.is_staff %}
+            <a href="{% url 'image_upload:upload' %}" class="btn btn-primary">
+                <i class="bi bi-upload"></i> Upload Your First File
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Statistics Cards -->
+<div class="row mt-5">
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-file-earmark-fill text-primary" style="font-size: 2rem;"></i>
+                <h5 class="card-title mt-2">Total Files</h5>
+                <p class="card-text display-6">{{ total_images|default:0 }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-tags-fill text-success" style="font-size: 2rem;"></i>
+                <h5 class="card-title mt-2">Total Tags</h5>
+                <p class="card-text display-6">{{ total_tags|default:0 }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-building text-warning" style="font-size: 2rem;"></i>
+                <h5 class="card-title mt-2">Publishers</h5>
+                <p class="card-text display-6">{{ total_publishers|default:0 }}</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 col-sm-6 mb-3">
+        <div class="card text-center">
+            <div class="card-body">
+                <i class="bi bi-collection text-info" style="font-size: 2rem;"></i>
+                <h5 class="card-title mt-2">Ranges</h5>
+                <p class="card-text display-6">{{ total_ranges|default:0 }}</p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

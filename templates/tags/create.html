@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+
+{% block title %}Create Tag - STL Collection{% endblock %}
+
+{% block extra_css %}
+<style>
+.btn-group-spaced .btn {
+    margin-left: 0.25rem;
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-6 offset-md-3">        <div class="card">
+            <div class="card-header">
+                <h3><i class="bi bi-plus-lg"></i> Create New Tag</h3>
+                {% if request.GET.tag_type_id %}
+                    <div class="alert alert-info mt-2 mb-0">
+                        <i class="bi bi-info-circle"></i> Tag type is pre-selected from your previous entry
+                    </div>
+                {% endif %}
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                      <div class="mb-3">
+                        <label for="{{ form.name.id_for_label }}" class="form-label">Tag Name *</label>
+                        {{ form.name }}
+                        {% if form.name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.name.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Enter a descriptive name for this tag.</div>
+                    </div>                    <div class="mb-3">
+                        <label for="{{ form.tag_type.id_for_label }}" class="form-label">Tag Type *</label>
+                        {{ form.tag_type }}
+                        {% if form.tag_type.errors %}
+                            <div class="invalid-feedback d-block">
+                                {{ form.tag_type.errors.0 }}
+                            </div>
+                        {% endif %}
+                        <div class="form-text">Select the category this tag belongs to.</div>
+                    </div>                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'tags:list' %}" class="btn btn-secondary me-md-2">
+                            <i class="bi bi-arrow-left"></i> Cancel
+                        </a>
+                        <button type="submit" name="create_another" class="btn btn-outline-primary me-md-2">
+                            <i class="bi bi-plus-circle"></i> Create & Create Another
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-check-lg"></i> Create Tag
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const form = document.querySelector('form');
+    const createBtn = document.querySelector('button[type="submit"]:not([name="create_another"])');
+    const createAnotherBtn = document.querySelector('button[name="create_another"]');
+    
+    form.addEventListener('submit', function(e) {
+        const clickedBtn = e.submitter;
+        
+        if (clickedBtn === createBtn) {
+            clickedBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Creating...';
+            clickedBtn.disabled = true;
+        } else if (clickedBtn === createAnotherBtn) {
+            clickedBtn.innerHTML = '<i class="bi bi-hourglass-split"></i> Creating...';
+            clickedBtn.disabled = true;
+        }
+    });
+});
+</script>
+{% endblock %}
