@@ -2,6 +2,39 @@
 
 {% block title %}STL Collection Manager - Home{% endblock %}
 
+{% block extra_css %}
+<style>
+/* Landing cards: keep image area ~50% and content aligned */
+.landing-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.landing-card .landing-img-container {
+    flex: 1 0 50%;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+    background: #f8f9fa;
+}
+
+.landing-card .landing-img-container img {
+    width: 100%;
+    height: auto;
+    max-height: 100%;
+    object-fit: contain;
+}
+
+.landing-card .card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="row">
     <div class="col-12">
@@ -33,12 +66,14 @@
 <div class="row">
     {% for entry in latest_images %}
     <div class="col-lg-3 col-md-6 mb-4">
-        <div class="card h-100">
+        <div class="card h-100 landing-card">
             {% with entry.get_display_image as display_img %}
                 {% if display_img %}
-                <img src="{{ display_img.image.url }}" class="card-img-top" alt="{{ entry.name }}">
+                <div class="card-img-container landing-img-container d-flex align-items-center justify-content-center">
+                    <img src="{{ display_img.image.url }}" class="img-fluid" alt="{{ entry.name }}">
+                </div>
                 {% else %}
-                <div class="card-img-top bg-light d-flex align-items-center justify-content-center" style="height: 200px;">
+                <div class="card-img-container landing-img-container bg-light d-flex align-items-center justify-content-center">
                     <i class="bi bi-file-earmark text-muted" style="font-size: 3rem;"></i>
                 </div>
                 {% endif %}
@@ -51,19 +86,14 @@
                 {% if entry.range %}
                 <p class="card-text"><small class="text-muted">Range: {{ entry.range }}</small></p>
                 {% endif %}
-                {% if entry.tags.exists %}
-                <div class="mb-2">
-                    {% for tag in entry.tags.all %}
-                    <span class="badge tag-badge" style="background-color: {{ tag.get_color }}; color: {{ tag.get_text_color }};">{{ tag.name }}</span>
-                    {% endfor %}
+                <div class="mt-auto">
+                    <p class="card-text mb-0">
+                        <small class="text-muted">
+                            <i class="bi bi-images"></i> {{ entry.images.count }} image{{ entry.images.count|pluralize }} • 
+                            Uploaded {{ entry.upload_date|date:"M d, Y" }}
+                        </small>
+                    </p>
                 </div>
-                {% endif %}
-                <p class="card-text">
-                    <small class="text-muted">
-                        <i class="bi bi-images"></i> {{ entry.images.count }} image{{ entry.images.count|pluralize }} • 
-                        Uploaded {{ entry.upload_date|date:"M d, Y" }}
-                    </small>
-                </p>
             </div>
             <div class="card-footer">
                 <a href="{% url 'image_details:detail' entry.id %}" class="btn btn-primary btn-sm">
