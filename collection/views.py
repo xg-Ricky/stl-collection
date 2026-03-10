@@ -12,6 +12,7 @@ from tags.models import Tag, TagType
 import os
 import re
 import uuid
+from urllib.parse import urlencode
 
 def to_camel_case(text):
     """Convert text to camelCase format"""
@@ -47,12 +48,7 @@ def gallery(request):
     # Filter by publisher
     publisher_filter = request.GET.get('publisher', '')
     if publisher_filter:
-        entries = entries.filter(publisher__icontains=publisher_filter)
-    
-    # Filter by range
-    range_filter = request.GET.get('range', '')
-    if range_filter:
-        entries = entries.filter(range__icontains=range_filter)
+        entries = entries.filter(publisher=publisher_filter)
     
     # Get tag types for filters
     tag_types = TagType.objects.filter(is_active=True, show_in_gallery=True).order_by('sort_order', 'name')
@@ -78,14 +74,26 @@ def gallery(request):
     if tag_filter:
         entries = entries.distinct()
     
+    # Build range options after search/publisher/tag filters, but before applying range
+    available_ranges = list(
+        entries.exclude(
+            Q(range__isnull=True) | Q(range__exact='')
+        ).values_list('range', flat=True).distinct().order_by('range')
+    )
+    
+    # Filter by range
+    range_filter = request.GET.get('range', '')
+    if range_filter in available_ranges:
+        entries = entries.filter(range=range_filter)
+    else:
+        range_filter = ''
+    
     # Get filter options for dropdowns
     publishers = Entry.objects.exclude(
         Q(publisher__isnull=True) | Q(publisher__exact='')
     ).values_list('publisher', flat=True).distinct().order_by('publisher')
     
-    ranges = Entry.objects.exclude(
-        Q(range__isnull=True) | Q(range__exact='')
-    ).values_list('range', flat=True).distinct().order_by('range')
+    ranges = available_ranges
     all_tags = Tag.objects.all()
     
     # Pagination
@@ -93,12 +101,17 @@ def gallery(request):
     page_number = request.GET.get('page')
     page_obj = paginator.get_page(page_number)
     
-    # Build query string for pagination (exclude 'page' parameter)
+    # Build query string for pagination from validated filters
     query_params = []
-    for key, value in request.GET.items():
-        if key != 'page' and value:
-            query_params.append(f'{key}={value}')
-    query_string = '&'.join(query_params)
+    if search_query:
+        query_params.append(('search', search_query))
+    if publisher_filter:
+        query_params.append(('publisher', publisher_filter))
+    if range_filter:
+        query_params.append(('range', range_filter))
+    for tag_type_id, tag_id in selected_tags.items():
+        query_params.append((f'tag_type_{tag_type_id}', str(tag_id)))
+    query_string = urlencode(query_params)
     
     return render(request, 'collection/gallery.html', {
         'page_obj': page_obj,
