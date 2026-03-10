@@ -759,6 +759,24 @@
     </div>
 </div>
 
+<!-- Upload Progress Modal -->
+<div class="modal fade" id="uploadProgressModal" tabindex="-1" aria-labelledby="uploadProgressLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header border-0">
+                <h5 class="modal-title" id="uploadProgressLabel"><i class="bi bi-cloud-upload"></i> Uploading...</h5>
+            </div>
+            <div class="modal-body">
+                <p class="mb-2" id="uploadProgressText">Preparing files...</p>
+                <div class="progress mb-2" role="progressbar" aria-label="Upload progress">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated" id="uploadProgressBar" style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">0%</div>
+                </div>
+                <small class="text-muted" id="uploadProgressPercent">0%</small>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Full Screen User Print Modal -->
 <div class="modal fade" id="userPrintModal" tabindex="-1" aria-labelledby="userPrintModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-fullscreen">
@@ -790,6 +808,63 @@
 </div>
 
 <script>
+// Progress Modal Functions
+let progressModalInstance = null;
+
+function showProgressModal() {
+    const progressModalEl = document.getElementById('uploadProgressModal');
+    if (!progressModalEl) return null;
+    
+    setProgress(0, 'Preparing files...');
+    
+    if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+        progressModalInstance = new bootstrap.Modal(progressModalEl, {
+            backdrop: 'static',
+            keyboard: false
+        });
+        progressModalInstance.show();
+    } else {
+        progressModalEl.classList.add('show', 'd-block');
+        progressModalEl.style.display = 'block';
+    }
+    
+    return progressModalInstance;
+}
+
+function hideProgressModal() {
+    const progressModalEl = document.getElementById('uploadProgressModal');
+    if (!progressModalEl) return;
+    
+    if (progressModalInstance) {
+        progressModalInstance.hide();
+        progressModalInstance = null;
+    } else {
+        progressModalEl.classList.remove('show', 'd-block');
+        progressModalEl.style.display = '';
+    }
+}
+
+function setProgress(value, text) {
+    const progressBar = document.getElementById('uploadProgressBar');
+    const progressText = document.getElementById('uploadProgressText');
+    const progressPercent = document.getElementById('uploadProgressPercent');
+    
+    if (!progressBar) return;
+    
+    const percent = Math.round(value);
+    progressBar.style.width = `${percent}%`;
+    progressBar.setAttribute('aria-valuenow', percent.toString());
+    progressBar.textContent = `${percent}%`;
+    
+    if (progressPercent) {
+        progressPercent.textContent = `${percent}%`;
+    }
+    
+    if (progressText && text) {
+        progressText.textContent = text;
+    }
+}
+
 // Handle modal image switching
 document.addEventListener('DOMContentLoaded', function() {
     const imageModal = document.getElementById('imageModal');
@@ -1296,33 +1371,66 @@ function deleteImageModal() {
     });
 }
 
-// Upload more images
+// Upload more images with progress
 function uploadMoreImages(entryId, files) {
     const formData = new FormData();
     for (let i = 0; i < files.length; i++) {
         formData.append('images', files[i]);
     }
     
-    fetch(`/upload/entry/${entryId}/add-images/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': '{{ csrf_token }}'
-        },
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Reload the page to show new images
-            window.location.reload();
-        } else {
-            alert(data.error || 'Failed to upload images');
+    showProgressModal();
+    
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `/upload/entry/${entryId}/add-images/`);
+    xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
+    
+    xhr.upload.onprogress = function(event) {
+        if (event.lengthComputable) {
+            const percentComplete = (event.loaded / event.total) * 100;
+            setProgress(percentComplete, 'Uploading...');
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
+    };
+    
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            const data = JSON.parse(xhr.responseText);
+            if (data.success) {
+                setProgress(100, 'Upload complete!');
+                
+                // Add new thumbnails to the gallery
+                const thumbnailCarousel = document.querySelector('#thumbnailCarousel .carousel-inner .carousel-item.active');
+                if (thumbnailCarousel && data.images) {
+                    data.images.forEach(img => {
+                        const newThumb = document.createElement('div');
+                        newThumb.className = 'thumbnail-item';
+                        newThumb.dataset.imageId = img.id;
+                        newThumb.dataset.imageUrl = img.url;
+                        newThumb.dataset.isPrimary = img.is_primary ? 'true' : 'false';
+                        newThumb.onclick = function() { switchMainImage(img.id, img.url, img.is_primary); };
+                        newThumb.innerHTML = `<img src="${img.url}" alt="{{ entry.name }}">`;
+                        thumbnailCarousel.appendChild(newThumb);
+                    });
+                }
+                
+                setTimeout(() => {
+                    hideProgressModal();
+                }, 500);
+            } else {
+                hideProgressModal();
+                alert(data.error || 'Failed to upload images');
+            }
+        } else {
+            hideProgressModal();
+            alert('Upload failed with status: ' + xhr.status);
+        }
+    };
+    
+    xhr.onerror = function() {
+        hideProgressModal();
         alert('Error uploading images');
-    });
+    };
+    
+    xhr.send(formData);
 }
 
 // User prints gallery logic
@@ -1420,26 +1528,64 @@ function uploadUserPrints(entryId, files) {
     for (let i = 0; i < files.length; i++) {
         formData.append('user_prints', files[i]);
     }
-
-    fetch(`/upload/entry/${entryId}/add-user-prints/`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': '{{ csrf_token }}'
-        },
-        body: formData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            window.location.reload();
-        } else {
-            alert(data.error || 'Failed to upload user prints');
+    
+    showProgressModal();
+    
+    const xhr = new XMLHttpRequest();
+    xhr.open('POST', `/upload/entry/${entryId}/add-user-prints/`);
+    xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
+    
+    xhr.upload.onprogress = function(event) {
+        if (event.lengthComputable) {
+            const percentComplete = (event.loaded / event.total) * 100;
+            setProgress(percentComplete, 'Uploading user prints...');
         }
-    })
-    .catch(error => {
-        console.error('Error:', error);
+    };
+    
+    xhr.onload = function() {
+        if (xhr.status === 200) {
+            const data = JSON.parse(xhr.responseText);
+            if (data.success) {
+                setProgress(100, 'Upload complete!');
+                
+                // Add new thumbnails to the user prints gallery
+                const userCarousel = document.querySelector('#userPrintCarousel .carousel-inner .carousel-item.active');
+                if (userCarousel && data.images) {
+                    data.images.forEach(img => {
+                        const newThumb = document.createElement('div');
+                        newThumb.className = 'user-thumbnail-item';
+                        newThumb.dataset.imageId = img.id;
+                        newThumb.dataset.imageUrl = img.url;
+                        newThumb.onclick = function() { switchUserPrint(img.id, img.url); };
+                        newThumb.innerHTML = `<img src="${img.url}" alt="{{ entry.name }} user print">`;
+                        userCarousel.appendChild(newThumb);
+                    });
+                    
+                    // If no main image, set the first one
+                    if (!document.getElementById('userMainImage').src && data.images.length > 0) {
+                        switchUserPrint(data.images[0].id, data.images[0].url);
+                    }
+                }
+                
+                setTimeout(() => {
+                    hideProgressModal();
+                }, 500);
+            } else {
+                hideProgressModal();
+                alert(data.error || 'Failed to upload user prints');
+            }
+        } else {
+            hideProgressModal();
+            alert('Upload failed with status: ' + xhr.status);
+        }
+    };
+    
+    xhr.onerror = function() {
+        hideProgressModal();
         alert('Error uploading user prints');
-    });
+    };
+    
+    xhr.send(formData);
 }
 
 function setupFileManager({
@@ -1491,26 +1637,111 @@ function setupFileManager({
         for (let i = 0; i < files.length; i++) {
             formData.append(formFieldName, files[i]);
         }
-
-        fetch(uploadUrl, {
-            method: 'POST',
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            body: formData
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                window.location.reload();
-            } else {
-                alert(data.error || 'Failed to upload files');
+        
+        showProgressModal();
+        
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', uploadUrl);
+        xhr.setRequestHeader('X-CSRFToken', '{{ csrf_token }}');
+        
+        xhr.upload.onprogress = function(event) {
+            if (event.lengthComputable) {
+                const percentComplete = (event.loaded / event.total) * 100;
+                setProgress(percentComplete, 'Uploading files...');
             }
-        })
-        .catch(error => {
-            console.error('Error:', error);
+        };
+        
+        xhr.onload = function() {
+            if (xhr.status === 200) {
+                const data = JSON.parse(xhr.responseText);
+                if (data.success) {
+                    setProgress(100, 'Upload complete!');
+                    
+                    // Add new files to the list
+                    const fileListId = dropZoneId === 'stlDropZone' ? 'stlFileList' : 'printFileList';
+                    const fileList = document.getElementById(fileListId);
+                    
+                    if (fileList && data.files) {
+                        data.files.forEach(file => {
+                            const fileItem = document.createElement('div');
+                            fileItem.className = 'file-list-item d-flex justify-content-between align-items-center';
+                            fileItem.dataset.fileId = file.id;
+                            
+                            const deleteUrlBase = dropZoneId === 'stlDropZone' ? 'delete_stl_file' : 'delete_print_file';
+                            const downloadUrlBase = dropZoneId === 'stlDropZone' ? 'download_stl_file' : 'download_print_file';
+                            
+                            fileItem.innerHTML = `
+                                <div>
+                                    <div class="fw-semibold">${file.name}</div>
+                                    <small class="text-muted">${formatFileSize(file.size)} • Just now</small>
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <a class="btn btn-sm btn-outline-secondary" href="/upload/entry/{{ entry.id }}/${dropZoneId === 'stlDropZone' ? 'stl' : 'print'}/${file.id}/download/">
+                                        <i class="bi bi-download"></i> Download
+                                    </a>
+                                    <button class="btn btn-sm btn-outline-danger ${deleteButtonClass}" data-delete-url="/upload/entry/{{ entry.id }}/${dropZoneId === 'stlDropZone' ? 'stl' : 'print'}/${file.id}/delete/">
+                                        <i class="bi bi-trash"></i> Delete
+                                    </button>
+                                </div>
+                            `;
+                            
+                            fileList.appendChild(fileItem);
+                            
+                            // Attach delete handler to new button
+                            const deleteBtn = fileItem.querySelector(`.${deleteButtonClass}`);
+                            deleteBtn.addEventListener('click', function() {
+                                if (!confirm('Delete this file?')) return;
+                                const deleteUrl = this.getAttribute('data-delete-url');
+                                fetch(deleteUrl, {
+                                    method: 'POST',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'X-CSRFToken': '{{ csrf_token }}'
+                                    }
+                                })
+                                .then(response => response.json())
+                                .then(data => {
+                                    if (data.success) {
+                                        fileItem.remove();
+                                    } else {
+                                        alert(data.error || 'Failed to delete file');
+                                    }
+                                })
+                                .catch(error => {
+                                    console.error('Error:', error);
+                                    alert('Error deleting file');
+                                });
+                            });
+                        });
+                    }
+                    
+                    setTimeout(() => {
+                        hideProgressModal();
+                    }, 500);
+                } else {
+                    hideProgressModal();
+                    alert(data.error || 'Failed to upload files');
+                }
+            } else {
+                hideProgressModal();
+                alert('Upload failed with status: ' + xhr.status);
+            }
+        };
+        
+        xhr.onerror = function() {
+            hideProgressModal();
             alert('Error uploading files');
-        });
+        };
+        
+        xhr.send(formData);
+    }
+    
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
     }
 
     document.querySelectorAll(`.${deleteButtonClass}`).forEach(button => {
